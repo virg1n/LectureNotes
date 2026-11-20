@@ -1,0 +1,643 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage[a4paper,margin=2.3cm,headheight=14pt]{geometry}
+\setlength{\parskip}{3pt plus 1pt}
+\makeatletter
+%% lecturenotes.sty -- house style for LectureNotes agent output.
+%% The model never writes a preamble: everything it may use is defined here.
+%% Optional packages are loaded only when installed, with graceful fallbacks,
+%% so the same template works on full TeX Live, TinyTeX and MiKTeX.
+
+
+
+\newif\ifln@cheatsheet \ln@cheatsheetfalse
+
+
+%% ------------------------------------------------------------------ core
+\RequirePackage{amsmath,amssymb,amsthm}
+\RequirePackage{bm}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{array}
+\RequirePackage{multicol}
+\RequirePackage{listings}
+\RequirePackage{url}
+\newif\ifln@mathtools \ln@mathtoolsfalse
+\IfFileExists{mathtools.sty}{\RequirePackage{mathtools}\ln@mathtoolstrue}{}
+\IfFileExists{booktabs.sty}{\RequirePackage{booktabs}}{%
+  \providecommand{\toprule}{\hline}\providecommand{\midrule}{\hline}%
+  \providecommand{\bottomrule}{\hline}\providecommand{\cmidrule}[1]{}}
+\IfFileExists{microtype.sty}{\RequirePackage{microtype}}{}
+
+%% ------------------------------------------------------------------ palette
+%% Keep in sync with lecturenotes.figures.style.PALETTE
+\definecolor{lnblue}{HTML}{1F5FAD}
+\definecolor{lnteal}{HTML}{0F7B6C}
+\definecolor{lnorange}{HTML}{C8642A}
+\definecolor{lnred}{HTML}{B3261E}
+\definecolor{lnpurple}{HTML}{6B4FA0}
+\definecolor{lngold}{HTML}{A77B0A}
+\definecolor{lngray}{HTML}{5F6368}
+\definecolor{lnbg}{HTML}{F5F7FA}
+
+%% ------------------------------------------------------------------ optional packages
+\newif\ifln@tcb \ln@tcbfalse
+%% Feature flags \lnno<feature> may be defined *before* loading this package
+%% (the harness probes what actually works on this machine; see latex/capabilities.py).
+\newcommand{\ln@ifenabled}[3]{\@ifundefined{lnno#1}{\IfFileExists{#2}{#3}{}}{}}
+\ln@ifenabled{tikz}{tikz.sty}{%
+  \RequirePackage{tikz}%
+  \usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,decorations.pathreplacing,patterns,fit,backgrounds,matrix}%
+}{}
+\ln@ifenabled{pgfplots}{pgfplots.sty}{\RequirePackage{pgfplots}\pgfplotsset{compat=newest}}
+\ln@ifenabled{tcolorbox}{tcolorbox.sty}{%
+  \RequirePackage{tcolorbox}\tcbuselibrary{skins,breakable}\ln@tcbtrue}
+\ln@ifenabled{siunitx}{siunitx.sty}{\RequirePackage{siunitx}}
+\@ifpackageloaded{siunitx}{}{%
+  \providecommand\SI[2]{\ensuremath{#1\,\mathrm{#2}}}%
+  \providecommand\si[1]{\ensuremath{\mathrm{#1}}}%
+  \providecommand\num[1]{#1}\providecommand\qty[2]{\ensuremath{#1\,\mathrm{#2}}}%
+  \providecommand\unit[1]{\ensuremath{\mathrm{#1}}}%
+  \providecommand\metre{m}\providecommand\second{s}\providecommand\kilogram{kg}\providecommand\gram{g}%
+  \providecommand\newton{N}\providecommand\joule{J}\providecommand\watt{W}\providecommand\volt{V}%
+  \providecommand\ampere{A}\providecommand\ohm{\Omega}\providecommand\hertz{Hz}\providecommand\kelvin{K}%
+  \providecommand\mole{mol}\providecommand\pascal{Pa}\providecommand\coulomb{C}\providecommand\tesla{T}%
+  \providecommand\kilo{k}\providecommand\milli{m}\providecommand\micro{\mu}\providecommand\nano{n}%
+  \providecommand\mega{M}\providecommand\giga{G}\providecommand\centi{c}%
+  \providecommand\per{/}\providecommand\squared{^2}\providecommand\cubed{^3}\providecommand\percent{\%}}
+\IfFileExists{enumitem.sty}{%
+  \RequirePackage{enumitem}%
+  \ifln@cheatsheet\setlist{nosep,leftmargin=1.1em}\else\setlist{itemsep=2pt,topsep=4pt,parsep=0pt}\fi}{}
+\IfFileExists{caption.sty}{\RequirePackage[font=small,labelfont={bf,sf}]{caption}}{}
+\IfFileExists{titlesec.sty}{%
+  \RequirePackage{titlesec}%
+  \ifln@cheatsheet\else
+  \titleformat{\section}{\Large\bfseries\sffamily\color{lnblue!80!black}}{\thesection}{0.8em}{}[{\color{lnblue!25}\titlerule[0.8pt]}]%
+  \titleformat{\subsection}{\large\bfseries\sffamily\color{lnblue!70!black}}{\thesubsection}{0.7em}{}%
+  \titleformat{\subsubsection}{\normalsize\bfseries\sffamily\color{lnblue!60!black}}{\thesubsubsection}{0.6em}{}%
+  \fi}{}
+
+%% ------------------------------------------------------------------ localisable labels
+\newcommand{\lnlabeldefinition}{Definition}
+\newcommand{\lnlabeltheorem}{Theorem}
+\newcommand{\lnlabellemma}{Lemma}
+\newcommand{\lnlabelproposition}{Proposition}
+\newcommand{\lnlabelcorollary}{Corollary}
+\newcommand{\lnlabelexample}{Example}
+\newcommand{\lnlabelremark}{Remark}
+\newcommand{\lnlabelkeyidea}{Key idea}
+\newcommand{\lnlabelwarning}{Pitfall}
+\newcommand{\lnlabelsummary}{Summary}
+\newcommand{\lnlabelexercise}{Exercise}
+\newcommand{\lnlabelsolution}{Solution}
+\newcommand{\lnlabeloverview}{Overview}
+\newcommand{\lnlabelobjectives}{Learning objectives}
+\newcommand{\lnlabelprereq}{Prerequisites}
+
+%% ------------------------------------------------------------------ counters
+\newcounter{lnthm}[section]
+\renewcommand{\thelnthm}{\thesection.\arabic{lnthm}}
+\newcounter{lnex}[section]
+\renewcommand{\thelnex}{\thesection.\arabic{lnex}}
+\newcounter{lnexer}[section]
+\renewcommand{\thelnexer}{\thesection.\arabic{lnexer}}
+
+%% #1 = optional title; prints " (title)" if non-empty
+\newcommand{\ln@opt}[1]{\if\relax\detokenize{#1}\relax\else\ (#1)\fi}
+
+\ifln@tcb
+  \tcbset{
+    lnbox/.style={enhanced, breakable, frame hidden, boxrule=0pt, arc=0pt, outer arc=0pt,
+      borderline west={2.6pt}{0pt}{#1},
+      colback=#1!5!white, coltitle=#1!80!black,
+      fonttitle=\bfseries\sffamily, attach title to upper, after title={.\enspace},
+      left=8pt, right=8pt, top=5pt, bottom=5pt, before skip=10pt, after skip=10pt},
+  }
+\fi
+
+%% \ln@defbox{env}{label macro}{color}{counter or empty}
+\newcommand{\ln@defbox}[4]{%
+  \ifln@tcb
+    \newenvironment{#1}[1][]{%
+      \if\relax\detokenize{#4}\relax\def\ln@num{}\else\refstepcounter{#4}\def\ln@num{~\csname the#4\endcsname}\fi
+      \begin{tcolorbox}[lnbox=#3,title={#2\ln@num\ln@opt{##1}}]}%
+      {\end{tcolorbox}}%
+  \else
+    \newenvironment{#1}[1][]{%
+      \if\relax\detokenize{#4}\relax\def\ln@num{}\else\refstepcounter{#4}\def\ln@num{~\csname the#4\endcsname}\fi
+      \par\medskip\noindent{\color{#3}\bfseries\sffamily #2\ln@num\ln@opt{##1}.}\enspace\ignorespaces}%
+      {\par\medskip}%
+  \fi}
+
+\ln@defbox{definition}{\lnlabeldefinition}{lnblue}{lnthm}
+\ln@defbox{theorem}{\lnlabeltheorem}{lnpurple}{lnthm}
+\ln@defbox{lemma}{\lnlabellemma}{lnpurple}{lnthm}
+\ln@defbox{proposition}{\lnlabelproposition}{lnpurple}{lnthm}
+\ln@defbox{corollary}{\lnlabelcorollary}{lnpurple}{lnthm}
+\ln@defbox{example}{\lnlabelexample}{lnteal}{lnex}
+\ln@defbox{remark}{\lnlabelremark}{lngray}{}
+\ln@defbox{keyidea}{\lnlabelkeyidea}{lngold}{}
+\ln@defbox{warning}{\lnlabelwarning}{lnred}{}
+\ln@defbox{summary}{\lnlabelsummary}{lnpurple}{}
+\ln@defbox{exercise}{\lnlabelexercise}{lnorange}{lnexer}
+\ln@defbox{solution}{\lnlabelsolution}{lngray}{}
+\ln@defbox{lnoverview}{\lnlabeloverview}{lnblue}{}
+
+%% common aliases a model may reach for
+\newenvironment{intuition}[1][]{\begin{keyidea}[#1]}{\end{keyidea}}
+\newenvironment{note}[1][]{\begin{remark}[#1]}{\end{remark}}
+
+%% ------------------------------------------------------------------ text macros
+\newcommand{\term}[1]{\textbf{\color{lnblue!85!black}#1}}
+\newcommand{\important}[1]{\textbf{\color{lnred!85!black}#1}}
+
+%% ------------------------------------------------------------------ math macros
+\providecommand{\R}{\mathbb{R}}
+\providecommand{\N}{\mathbb{N}}
+\providecommand{\Z}{\mathbb{Z}}
+\providecommand{\Q}{\mathbb{Q}}
+\providecommand{\C}{\mathbb{C}}
+\providecommand{\E}{\mathbb{E}}
+\providecommand{\Prob}{\mathbb{P}}
+\providecommand{\dd}{\mathop{}\!\mathrm{d}}
+\providecommand{\vect}[1]{\bm{#1}}
+\providecommand{\inner}[2]{\left\langle #1,\, #2\right\rangle}
+\@ifundefined{Var}{\DeclareMathOperator{\Var}{Var}}{}
+\@ifundefined{Cov}{\DeclareMathOperator{\Cov}{Cov}}{}
+\@ifundefined{tr}{\DeclareMathOperator{\tr}{tr}}{}
+\@ifundefined{rank}{\DeclareMathOperator{\rank}{rank}}{}
+\@ifundefined{diag}{\DeclareMathOperator{\diag}{diag}}{}
+\@ifundefined{sign}{\DeclareMathOperator{\sign}{sign}}{}
+\@ifundefined{argmin}{\DeclareMathOperator*{\argmin}{arg\,min}}{}
+\@ifundefined{argmax}{\DeclareMathOperator*{\argmax}{arg\,max}}{}
+\ifln@mathtools
+  \@ifundefined{abs}{\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}}{}
+  \@ifundefined{norm}{\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}}{}
+  \@ifundefined{floor}{\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}}{}
+  \@ifundefined{ceil}{\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}}{}
+\else
+  % minimal stand-ins (no starred/optional-size variants)
+  \providecommand{\abs}[1]{\left\lvert #1\right\rvert}
+  \providecommand{\norm}[1]{\left\lVert #1\right\rVert}
+  \providecommand{\floor}[1]{\left\lfloor #1\right\rfloor}
+  \providecommand{\ceil}[1]{\left\lceil #1\right\rceil}
+\fi
+
+%% ------------------------------------------------------------------ code listings
+\lstdefinestyle{ln}{
+  basicstyle=\ttfamily\small, keywordstyle=\color{lnblue}\bfseries,
+  commentstyle=\color{lngray}\itshape, stringstyle=\color{lnorange},
+  numbers=left, numberstyle=\tiny\color{lngray}, numbersep=6pt,
+  backgroundcolor=\color{lnbg}, frame=leftline, rulecolor=\color{lnblue!40}, framerule=1.5pt,
+  breaklines=true, showstringspaces=false, columns=fullflexible, keepspaces=true,
+  tabsize=4, xleftmargin=1.8em, framexleftmargin=0.6em, aboveskip=8pt, belowskip=8pt}
+\lstset{style=ln}
+
+%% ------------------------------------------------------------------ figures
+%% \lnfigure{includegraphics options}{file}{caption}{label}
+\newcommand{\lnfigure}[4]{%
+  \begin{figure}[htbp]\centering\includegraphics[#1]{#2}\caption{#3}\label{#4}\end{figure}}
+%% non-floating variant, used when a figure block sits inside a box (floats are illegal there)
+\newcommand{\lnfigurehere}[4]{%
+  \par\smallskip\begin{center}\includegraphics[#1]{#2}\par\smallskip
+  \refstepcounter{figure}\label{#4}{\small\textbf{\sffamily Figure~\thefigure:}~#3}\end{center}}
+\newcommand{\lnmissingfigurehere}[2]{%
+  \par\smallskip\begin{center}\fcolorbox{lngray!60}{lnbg}{\parbox{0.55\linewidth}{\centering\small\itshape\color{lngray}figure unavailable}}\par\smallskip
+  \refstepcounter{figure}\label{#2}{\small\textbf{\sffamily Figure~\thefigure:}~#1}\end{center}}
+%% placeholder for a figure the harness could not render (keeps \ref targets valid)
+\newcommand{\lnmissingfigure}[2]{%
+  \begin{figure}[htbp]\centering
+  \fcolorbox{lngray!60}{lnbg}{\parbox{0.55\linewidth}{\centering\small\itshape\color{lngray}figure unavailable}}%
+  \caption{#1}\label{#2}\end{figure}}
+
+%% ------------------------------------------------------------------ title block
+\newcommand{\lnmaketitle}[3]{%
+  \thispagestyle{plain}%
+  \begingroup\setlength{\parindent}{0pt}%
+  {\color{lnblue}\rule{\linewidth}{2pt}}\par\vspace{8pt}%
+  {\sffamily\bfseries\huge\color{lnblue!85!black}#1\par}%
+  \if\relax\detokenize{#2}\relax\else\vspace{5pt}{\sffamily\Large\color{lngray}#2\par}\fi
+  \vspace{7pt}{\sffamily\small\color{lngray}#3\par}%
+  \vspace{4pt}{\color{lnblue}\rule{\linewidth}{0.6pt}}\par\vspace{12pt}%
+  \endgroup}
+
+%% ------------------------------------------------------------------ cheat sheet
+\newcounter{lncs}
+\newcommand{\ln@cscolor}{%
+  \ifcase\numexpr\value{lncs}-5*((\value{lncs}-2)/5)\relax % (a-2)/5 rounds == floor(a/5)
+    lnblue\or lnteal\or lnpurple\or lnorange\or lnred\else lnblue\fi}
+\ifln@tcb
+  \newenvironment{csbox}[1]{%
+    \stepcounter{lncs}\edef\ln@cc{\ln@cscolor}%
+    \begin{tcolorbox}[enhanced, colback=white, colframe=\ln@cc!75!black, colbacktitle=\ln@cc!12!white,
+      coltitle=\ln@cc!80!black, boxrule=0.5pt, arc=1.2pt, left=2.5pt, right=2.5pt, top=1.5pt, bottom=2pt,
+      boxsep=1pt, toptitle=0.6pt, bottomtitle=0.6pt, fonttitle=\bfseries\sffamily,
+      before skip=3pt, after skip=3pt, title={#1}]%
+    \setlength{\abovedisplayskip}{2pt}\setlength{\belowdisplayskip}{2pt}%
+    \setlength{\abovedisplayshortskip}{1pt}\setlength{\belowdisplayshortskip}{1pt}}%
+    {\end{tcolorbox}}
+\else
+  \newenvironment{csbox}[1]{\par\smallskip\noindent{\bfseries\sffamily\color{lnblue}#1}\par\nopagebreak}{\par\smallskip}
+\fi
+
+\IfFileExists{hyperref.sty}{\RequirePackage[hidelinks]{hyperref}}{}
+
+
+\makeatother
+\IfFileExists{fancyhdr.sty}{%
+  \usepackage{fancyhdr}\pagestyle{fancy}\fancyhf{}%
+  \fancyhead[L]{\small\sffamily\color{lngray}Error-Correcting Hamming Codes}%
+  \fancyhead[R]{\small\sffamily\color{lngray}\nouppercase{\leftmark}}%
+  \fancyfoot[C]{\small\sffamily\color{lngray}\thepage}%
+  \renewcommand{\headrulewidth}{0.3pt}}{}
+\graphicspath{{figures/}}
+
+\begin{document}
+\lnmaketitle{Error-Correcting Hamming Codes}{Detecting and correcting errors in digital communication}{November 2026}
+
+\begin{lnoverview}
+This lecture introduces Hamming codes, a class of error-correcting codes that can detect and correct single-bit errors in data transmission. We will explore the principles behind these codes, their construction, and their applications in ensuring reliable communication. This topic is crucial for understanding how digital systems maintain data integrity in the presence of noise and errors.
+
+\smallskip\noindent\textbf{\lnlabelobjectives:}
+\begin{itemize}
+  \item understand the concept of error detection and correction in digital communication
+  \item construct and decode Hamming codes for single-bit error correction
+  \item analyze the efficiency and limitations of Hamming codes
+  \item apply Hamming codes to real-world scenarios such as memory systems and satellite communication
+\end{itemize}
+\noindent\textbf{\lnlabelprereq:} basic understanding of binary numbers, familiarity with binary addition and subtraction.
+\end{lnoverview}
+
+{\small\tableofcontents}
+\bigskip
+
+% ---- s1.tex
+\section{Introduction to Error-Correcting Codes}
+
+In the realm of digital communication, the transmission of data across noisy channels is a common challenge. \term{Digital communication errors} occur when the signal received at the destination differs from the original signal sent. These errors can arise due to various factors such as electromagnetic interference, signal degradation, or hardware malfunctions. Ensuring the integrity of transmitted data is crucial, especially in applications like satellite communication, computer networks, and memory systems, where even a single bit error can lead to significant consequences.
+
+To address this issue, \term{error detection and correction} techniques are employed. Error detection involves identifying the presence of errors in the received data, while error correction goes a step further by not only detecting errors but also determining their exact locations and values, allowing the receiver to reconstruct the original data. This is achieved through the use of \term{error-correcting codes}, which are mathematical constructs that add redundancy to the data being transmitted.
+
+There are several types of error-correcting codes, each with its own advantages and limitations. Some of the most well-known include \term{Hamming codes}, \term{Reed-Solomon codes}, and \term{Low-Density Parity-Check (LDPC) codes}. These codes vary in their ability to detect and correct errors, their efficiency in terms of data transmission, and their complexity in implementation. Understanding the fundamental principles of error correction is essential for designing reliable communication systems.
+
+[keyidea] A key idea in error-correcting codes is that redundancy is intentionally added to the data to detect and correct errors. This redundancy allows the receiver to identify and correct errors without needing a retransmission of the data, which is critical in environments where retransmission is not feasible or efficient.
+
+\lnfigure{}{s1/error-communication-0b8c3430.pdf}{Illustration of digital communication with noise.}{fig:error-communication}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+\lnfigure{width=0.60\linewidth}{s1/fad7ce8a95289140.png}{Overview of error-correcting codes. {\footnotesize(Image: derivative work Dhatfield M1 Abrams-TUSK.svg: *derivative wo, CC BY-SA 3.0, Wikimedia Commons)}}{fig:error-codes}
+
+[definition] An \term{error-correcting code} is a method of encoding data in such a way that the original data can be recovered even if some of the encoded data is corrupted during transmission. This is achieved by adding redundant information to the original data, which allows the receiver to detect and correct errors.
+
+% ---- s2.tex
+\section{Hamming Codes: A Closer Look}
+
+In this section, we delve into the \term{Hamming code}, a fundamental class of error-correcting codes that plays a crucial role in ensuring the reliability of digital communication systems. The Hamming code was introduced by Richard Hamming in 1950 as a solution to the problem of detecting and correcting errors in data transmission. Its simplicity and effectiveness make it a cornerstone in the field of error-correcting codes.
+
+A \term{Hamming code} is a linear error-correcting code that can detect and correct single-bit errors in a transmitted message. The core idea behind Hamming codes is to add redundant bits, known as \term{parity bits}, to the original data. These parity bits are strategically placed in positions that allow the code to identify and correct any single-bit error that may occur during transmission.
+
+The structure of a Hamming code is based on the concept of parity checks. In a Hamming code, the data bits are interleaved with parity bits in such a way that each parity bit covers a specific subset of the data bits. This arrangement ensures that any single-bit error can be uniquely identified and corrected. For example, consider a Hamming code with $ n $ total bits, where $ n $ includes both data bits and parity bits. The number of parity bits, denoted as $ r $, is determined by the relationship $ 2^r \geq n + r + 1 $, which ensures that the code can correct single-bit errors.
+
+The role of the parity bits is to provide redundancy that allows the receiver to detect and correct errors. When a single-bit error occurs, the parity bits will indicate the position of the error, enabling the receiver to flip the erroneous bit and restore the original data. This is achieved by calculating the parity of the bits covered by each parity bit and using the results to determine the error location.
+
+To better understand the structure of Hamming codes, let us consider an example. Suppose we have a 4-bit data sequence: $ d_1, d_2, d_3, d_4 $. We will add 3 parity bits, $ p_1, p_2, p_3 $, to form a 7-bit codeword. The parity bits are placed in positions that are powers of 2: $ p_1 $ in position 1, $ p_2 $ in position 2, and $ p_3 $ in position 4. The remaining positions are filled with the data bits. This arrangement allows each parity bit to cover a specific subset of the data bits, enabling the detection and correction of single-bit errors.
+
+\lnfigure{}{s2/hamming-code-structure-da95270b.pdf}{Diagram of the Hamming code structure showing data and parity bits.}{fig:hamming-code-structure}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+\lnfigure{}{s2/hamming-code-example-7b616789.pdf}{Example of Hamming code encoding with data bits and parity bits.}{fig:hamming-code-example}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+In summary, the Hamming code is a powerful tool for detecting and correcting single-bit errors. Its structure, based on the strategic placement of parity bits, allows for efficient error correction. By understanding the role of parity bits and their arrangement, we can appreciate the elegance and effectiveness of Hamming codes in ensuring data integrity in digital communication systems.
+
+% ---- s3.tex
+\section{Constructing Hamming Codes}
+
+In this section, we explore how to construct Hamming codes for different lengths. The construction process involves determining the positions of parity bits and understanding the encoding and decoding procedures. These steps are essential for implementing Hamming codes in practice.
+
+A \term{Hamming code} is a type of error-correcting code that can detect and correct single-bit errors. The construction of a Hamming code begins with selecting the length of the code, denoted as $ n $, and the number of data bits, denoted as $ k $. The total number of bits in the code is $ n = 2^r - 1 $, where $ r $ is the number of parity bits. The number of data bits is then $ k = n - r $.
+
+The first step in constructing a Hamming code is to determine the positions of the parity bits. These positions are powers of 2, such as 1, 2, 4, 8, etc. For example, in a $ (7, 4) $ Hamming code, the parity bits are at positions 1, 2, and 4, while the data bits are at positions 3, 5, 6, and 7. This arrangement ensures that each parity bit covers a specific set of data bits, allowing for the detection and correction of single-bit errors.
+
+\begin{keyidea}
+The key idea in Hamming code construction is that each parity bit is responsible for a unique subset of data bits, enabling the identification of a single-bit error by examining which parity checks fail.
+\end{keyidea}
+
+The encoding process involves calculating the parity bits based on the data bits. Each parity bit is calculated using the XOR operation on the data bits it covers. For instance, in a $ (7, 4) $ Hamming code, the parity bit at position 1 covers all bits whose position has the least significant bit set to 1, the parity bit at position 2 covers all bits whose position has the second least significant bit set to 1, and so on. This process continues for each parity bit.
+
+The decoding process is the reverse of the encoding process. When a received codeword is decoded, the parity bits are recalculated and compared with the received parity bits. If a discrepancy is found, the position of the error can be determined by identifying which parity bits are incorrect. This is done by examining the positions of the parity bits that have different values.
+
+\lnfigure{}{s3/hamming-code-encoding-8ecb1bd5.pdf}{Step-by-step encoding of a Hamming code.}{fig:hamming-code-encoding}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+\lnfigure{}{s3/hamming-code-decoding-de7aa5b5.pdf}{Example of Hamming code decoding.}{fig:hamming-code-decoding}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+In summary, constructing Hamming codes involves determining the positions of parity bits, encoding the data bits using XOR operations, and decoding the received codeword by recalculating the parity bits and identifying any discrepancies. These steps are crucial for the effective implementation of Hamming codes in error correction systems.
+
+% ---- s4.tex
+\section{Applications of Hamming Codes}
+
+Hamming codes are not just theoretical constructs; they have found widespread use in various real-world systems where reliable data transmission and storage are essential. Their ability to detect and correct single-bit errors makes them particularly valuable in environments where data integrity is critical. In this section, we explore three key applications of Hamming codes: memory systems, satellite communication, and computer networks.
+
+In \term{memory systems}, such as RAM (Random Access Memory), Hamming codes are used to detect and correct errors that may occur due to cosmic rays or other sources of radiation. These errors can lead to data corruption, which can have serious consequences in computing systems. By incorporating Hamming codes into memory systems, errors can be automatically detected and corrected without the need for human intervention. This ensures that the system continues to operate reliably even in the presence of single-bit errors. Figure~\ref{fig:hamming-code-memory} illustrates how Hamming codes are used to protect data in memory systems.
+
+\begin{keyidea}
+Hamming codes work by adding redundant parity bits to the data, allowing the receiver to detect and correct single-bit errors. This redundancy is calculated based on the positions of the data bits, enabling the identification of the exact bit that is corrupted.
+\end{keyidea}
+
+In \term{satellite communication}, the reliability of data transmission is crucial due to the long distances involved and the potential for signal degradation. Hamming codes are used to ensure that data transmitted between satellites and ground stations is accurate and free from errors. By adding parity bits to the data, Hamming codes enable the detection and correction of single-bit errors that may occur during transmission. This is particularly important for maintaining the integrity of data in applications such as weather forecasting, global positioning systems, and satellite television.
+
+In \term{computer networks}, Hamming codes are used to ensure that data packets transmitted between devices are received accurately. Network protocols often incorporate error detection and correction mechanisms to handle the possibility of data corruption due to interference or other factors. Hamming codes are one of the simpler and more efficient methods for achieving this. They are used in various network protocols to ensure that data is transmitted reliably, even in the presence of single-bit errors. This is essential for maintaining the performance and reliability of computer networks.
+
+\lnfigure{width=0.60\linewidth}{s4/7b54fa5bfd8acb17.png}{Applications of Hamming codes in memory systems, satellite communication, and computer networks. {\footnotesize(Image: Cornor-02, CC BY-SA 4.0, Wikimedia Commons)}}{fig:hamming-code-applications}
+\lnfigure{}{s4/hamming-code-memory-d17d0e8c.pdf}{Illustration of Hamming codes in memory systems.}{fig:hamming-code-memory}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+In summary, Hamming codes have a wide range of applications in real-world systems, from memory systems to satellite communication and computer networks. Their ability to detect and correct single-bit errors makes them an essential tool in ensuring data integrity in various domains.
+
+% ---- s5.tex
+\section{Limitations and Efficiency of Hamming Codes}
+
+\subsection{Single-Bit Error Correction Only}
+
+Hamming codes are designed to correct \term{single-bit errors} but cannot handle multiple-bit errors. This limitation is a direct consequence of their construction, which relies on parity checks that can identify and correct exactly one bit in error. If two or more bits are flipped, the parity checks may indicate a different location for the error or fail to detect it entirely. For example, consider a Hamming code of length 7, which can correct one-bit errors. If two bits are flipped, the syndrome (a vector derived from the parity checks) will not correspond to a valid error location, and the decoder may either fail to detect the error or correct it incorrectly.
+
+This restriction makes Hamming codes unsuitable for environments where multiple-bit errors are likely, such as in high-energy physics experiments or certain types of memory systems. In such cases, more robust error-correcting codes, such as Reed-Solomon codes, are preferred.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}
+\draw (0,0) rectangle (4,2) node[midway] {Hamming Code};
+\draw (0,1) -- (4,1) node[midway, below] {Single-bit Error Correction};
+\draw (0,0.5) -- (4,0.5) node[midway, above] {Efficient Encoding};
+\draw (0,1.5) -- (4,1.5) node[midway, below] {Limited Error Correction};
+\end{tikzpicture}
+\caption{Limitations of Hamming codes in error correction.}
+\label{fig:hamming-code-limitations}
+\end{figure}
+
+\subsection{Efficiency of Hamming Codes}
+
+The efficiency of Hamming codes is measured by the ratio of the number of data bits to the total number of bits in the encoded message. For example, a Hamming code that encodes $ k $ data bits uses $ n = 2^m - 1 $ total bits, where $ m $ is the number of parity bits. The efficiency is given by $ \frac{k}{n} $, and this ratio decreases as the number of parity bits increases. This trade-off between error correction capability and efficiency is a key consideration in the design of error-correcting codes.
+
+Hamming codes are particularly efficient for correcting single-bit errors in applications where the probability of multiple-bit errors is low. However, as the required error correction capability increases, the overhead introduced by additional parity bits can become significant. This makes Hamming codes less efficient compared to other codes that can correct multiple-bit errors with fewer parity bits.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}
+\draw (0,0) rectangle (4,2) node[midway] {Hamming Code};
+\draw (0,1) -- (4,1) node[midway, below] {High Efficiency};
+\draw (0,0.5) -- (4,0.5) node[midway, above] {Low Parity Bit Overhead};
+\draw (0,1.5) -- (4,1.5) node[midway, below] {Single-bit Error Correction};
+\end{tikzpicture}
+\caption{Efficiency of Hamming codes in error correction.}
+\label{fig:hamming-code-efficiency}
+\end{figure}
+
+\subsection{Comparison with Other Error-Correcting Codes}
+
+When comparing Hamming codes to other error-correcting codes, such as Reed-Solomon codes or BCH codes, it becomes clear that the choice of code depends on the specific requirements of the application. Hamming codes are simpler and more efficient for single-bit error correction, but they are not suitable for correcting multiple-bit errors. In contrast, Reed-Solomon codes can correct multiple-bit errors and are widely used in applications such as satellite communication and storage systems.
+
+The efficiency of Hamming codes is often higher than that of more complex codes, but their limited error correction capability may make them unsuitable for certain applications. For example, in satellite communication, where multiple-bit errors are more likely due to signal degradation, Reed-Solomon codes are preferred over Hamming codes.
+
+\begin{keyidea}
+Hamming codes are efficient for single-bit error correction but cannot handle multiple-bit errors, making them less suitable for applications where multiple-bit errors are likely.
+\end{keyidea}
+\lnfigure{}{s5/hamming-code-efficiency-46d31747.pdf}{Efficiency comparison of Hamming codes and other error-correcting codes as a function of error correction capability.}{fig:hamming-code-efficiency}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+Figure~\ref{fig:hamming-code-efficiency} illustrates this.
+\lnfigure{width=0.60\linewidth}{s5/d432ec585b1c18c6.png}{limitations of Hamming codes {\footnotesize(Image: User:Cburnett, CC BY-SA 3.0, Wikimedia Commons)}}{fig:hamming-code-limitations}
+Figure~\ref{fig:hamming-code-limitations} illustrates this.
+\begin{summary}
+\begin{itemize}
+\item Hamming codes can only correct single-bit errors.
+\item The efficiency of Hamming codes depends on the number of parity bits used.
+\item Hamming codes are less efficient than other codes when correcting multiple-bit errors.
+\end{itemize}
+\end{summary}
+
+% ---- s6.tex
+\section{Summary and Review}
+
+In this lecture, we have explored the fundamental principles of \term{Hamming codes}, a class of error-correcting codes that play a crucial role in ensuring the reliability of digital communication systems. A \term{Hamming code} is a linear error-correcting code capable of detecting and correcting single-bit errors in a transmitted message. This capability is achieved through the strategic placement of \term{parity bits}, which are additional bits added to the original data to enable error detection and correction.
+
+The structure of a Hamming code is based on the binary representation of the message bits and the positions of the parity bits. Specifically, the parity bits are placed at positions that are powers of two (e.g., positions 1, 2, 4, 8, etc.), while the data bits occupy the remaining positions. This arrangement allows the parity bits to cover different subsets of the data bits, enabling the identification of the exact location of a single-bit error during decoding.
+
+\begin{keyidea}
+The key idea behind Hamming codes is that each parity bit covers a unique subset of the data bits, allowing the receiver to determine the exact location of a single-bit error by analyzing the parity checks.
+\end{keyidea}
+
+The encoding process involves calculating the values of the parity bits based on the data bits. During transmission, if a single-bit error occurs, the decoding process uses the parity bits to detect the error and correct it by flipping the erroneous bit. This ensures that the original message is accurately reconstructed at the receiver end.
+
+The importance of error correction in digital communication cannot be overstated. In systems such as satellite communication, memory storage, and computer networks, the presence of errors due to noise or interference can lead to significant data loss or system failure. Hamming codes provide a robust and efficient solution to this problem, ensuring the integrity and reliability of transmitted information.
+
+\lnfigure{height=0.6\textheight,keepaspectratio}{s6/hamming-code-summary-5533c221.pdf}{Summary diagram of Hamming codes showing the structure of parity and data bits.}{fig:hamming-code-summary}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+In summary, Hamming codes offer a powerful and efficient method for detecting and correcting single-bit errors in digital communication systems. Their structure, based on parity bits and data bits, ensures the integrity of transmitted information, making them an essential tool in modern communication technologies. As we have seen, the encoding and decoding processes are straightforward and effective, and their importance in ensuring reliable data transmission cannot be overstated.
+
+\end{document}

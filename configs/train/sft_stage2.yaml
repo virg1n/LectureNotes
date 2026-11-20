@@ -1,0 +1,19 @@
+# SFT stage 2: house style only (teacher + verified on-policy data), on top of merged stage 1, lower lr.
+model: ${SFT1_MERGED:-checkpoints/sft-merged}
+train_file: data/sft/train_stage2.jsonl
+val_file: data/sft/val.jsonl
+output_dir: checkpoints/sft2-lora
+max_len: 8192
+lr: 5.0e-5
+epochs: 2
+per_device_batch: 1
+grad_accum: 8
+global_batch: 32          # grad_accum is recomputed from the number of GPUs actually used
+warmup_ratio: 0.05
+dtype: fp16
+gradient_checkpointing: true
+use_lora: true
+lora_r: 64
+lora_alpha: 128
+lora_dropout: 0.05
+lora_targets: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj, qkv_proj, gate_up_proj]

@@ -1,0 +1,16 @@
+# Full fine-tuning with DeepSpeed ZeRO-3 (fp16). The node has PCIe-only GPUs (no NVLink),
+# so ZeRO-3 is communication-bound; prefer LoRA unless full FT clearly wins on the benchmark.
+model: ${BASE_MODEL:-Qwen/Qwen3-4B-Instruct-2507}
+train_file: data/sft/train.jsonl
+val_file: data/sft/val.jsonl
+output_dir: checkpoints/sft-full
+max_len: 8192
+lr: 1.0e-5
+epochs: 2
+per_device_batch: 1
+grad_accum: 8
+warmup_ratio: 0.03
+dtype: fp16
+gradient_checkpointing: true
+use_lora: false
+deepspeed: configs/deepspeed/zero3.json

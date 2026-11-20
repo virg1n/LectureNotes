@@ -1,0 +1,32 @@
+# LoRA SFT on 8 x V100-32GB with DDP:
+#   torchrun --nproc_per_node 8 -m lecturenotes.training.sft --config configs/train/sft_lora.yaml
+# Effective batch = 8 GPUs x 1 x 8 = 64 sequences/step.
+model: ${BASE_MODEL:-Qwen/Qwen3-4B-Instruct-2507}
+train_file: data/sft/train.jsonl
+val_file: data/sft/val.jsonl
+output_dir: checkpoints/sft-lora
+max_len: 8192
+lr: 2.0e-4
+epochs: 2
+per_device_batch: 1
+grad_accum: 8
+global_batch: 32          # grad_accum is recomputed from the number of GPUs actually used
+warmup_ratio: 0.03
+lr_scheduler: cosine
+dtype: fp16                 # V100 has no bf16
+gradient_checkpointing: true
+attn_implementation: sdpa   # no FlashAttention-2 on sm_70
+use_lora: true
+lora_r: 64
+lora_alpha: 128
+lora_dropout: 0.05
+# union over architectures; names that do not exist in the model are ignored
+lora_targets: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj, qkv_proj, gate_up_proj]
+task_weights:               # oversampling (after build_sft caps)
+  repair_latex: 1.0
+  repair_figure: 1.5
+  plan: 1.5
+  cheatsheet: 2.0
+logging_steps: 10
+eval_steps: 200
+save_steps: 100

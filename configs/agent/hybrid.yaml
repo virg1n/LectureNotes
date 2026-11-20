@@ -1,0 +1,8 @@
+# Student writes; a stronger model plans and repairs (useful early, before RL).
+backends:
+  student: {type: openai, base_url: "http://127.0.0.1:8000/v1", model: student}
+  teacher: {type: openai, base_url: "http://127.0.0.1:8001/v1", model: teacher}
+routes:
+  "*": student
+  plan: teacher
+  repair_latex: teacher

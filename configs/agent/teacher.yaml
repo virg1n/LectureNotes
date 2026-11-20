@@ -1,0 +1,19 @@
+# Teacher distillation: an open-weights teacher served by vLLM on the V100 node (TP=4).
+# Using an API model as teacher is possible (type: anthropic) -- check the provider's
+# terms on training models with its outputs first.
+backends:
+  teacher:
+    type: openai
+    base_url: ${LN_TEACHER_URL:-http://127.0.0.1:8001/v1}
+    model: teacher
+    max_concurrency: 48
+    disable_thinking: true
+routes: {"*": teacher}
+params:
+  write_section: {temperature: 0.8}
+harness:
+  samples_per_section: 2        # two drafts per section -> reward-ranked pairs for DPO
+  adaptive_sampling: false      # always draw both (we want the pairs)
+  max_latex_repairs: 3
+  revise_rounds: 1
+  section_concurrency: 6

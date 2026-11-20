@@ -1,0 +1,36 @@
+<# Standalone wrapper used to render (and validate) one TikZ figure in isolation. #>
+<% if has_standalone %>
+\documentclass[border=4pt]{standalone}
+<% else %>
+\documentclass{article}
+\pagestyle{empty}
+<% endif %>
+<% if language == 'ru' %>
+\usepackage[T2A,T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian,english]{babel}
+<% else %>
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+<% endif %>
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage{amsmath,amssymb,bm}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,shapes.misc,decorations.pathreplacing,decorations.markings,patterns,fit,backgrounds,matrix,trees,automata,intersections}
+\IfFileExists{pgfplots.sty}{\usepackage{pgfplots}\pgfplotsset{compat=newest}\usepgfplotslibrary{fillbetween}}{}
+\definecolor{lnblue}{HTML}{1F5FAD}
+\definecolor{lnteal}{HTML}{0F7B6C}
+\definecolor{lnorange}{HTML}{C8642A}
+\definecolor{lnred}{HTML}{B3261E}
+\definecolor{lnpurple}{HTML}{6B4FA0}
+\definecolor{lngold}{HTML}{A77B0A}
+\definecolor{lngray}{HTML}{5F6368}
+\definecolor{lnbg}{HTML}{F5F7FA}
+\providecommand{\R}{\mathbb{R}}
+\providecommand{\N}{\mathbb{N}}
+\providecommand{\Z}{\mathbb{Z}}
+\providecommand{\E}{\mathbb{E}}
+\begin{document}
+<< body >>
+\end{document}

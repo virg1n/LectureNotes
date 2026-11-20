@@ -1,0 +1,6 @@
+# Offline demo / CI: deterministic mock "model" that makes typical small-model mistakes.
+backends:
+  mock: {type: mock, inject_errors: true}
+routes: {"*": mock}
+harness:
+  section_concurrency: 3

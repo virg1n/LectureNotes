@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lecture Notes</title>
+<style>
+  :root { --bg:#f6f6f3; --card:#fff; --fg:#1d1d1b; --muted:#6b6b66; --line:#e2e1dc; --accent:#2f5d8a; --ok:#2e7d4f; --err:#b3392f; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#161615; --card:#1f1f1d; --fg:#ecebe6; --muted:#9b9a94; --line:#33322f; --accent:#7fa8d1; --ok:#6cc28f; --err:#e3766c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 28px 16px 60px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 22px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin-bottom: 18px; }
+  form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px 14px; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--muted); }
+  .wide { grid-column: 1 / -1; }
+  .half { grid-column: span 2; }
+  input, select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; }
+  #drop { border: 1.5px dashed var(--line); border-radius: 9px; padding: 22px; text-align: center; cursor: pointer; color: var(--muted); }
+  #drop.over, #drop.has { border-color: var(--accent); color: var(--fg); }
+  button { font: inherit; border: 0; border-radius: 7px; padding: 9px 18px; background: var(--accent); color: #fff; cursor: pointer; }
+  button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 5px 10px; font-size: 13px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .err { color: var(--err); }
+  .job { border-top: 1px solid var(--line); padding: 14px 0; }
+  .job:first-child { border-top: 0; padding-top: 0; }
+  .job h3 { margin: 0; font-size: 16px; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .pill { font-size: 12px; padding: 2px 9px; border-radius: 99px; border: 1px solid var(--line); }
+  .pill.done { color: var(--ok); border-color: var(--ok); }
+  .pill.error, .pill.cancelled { color: var(--err); border-color: var(--err); }
+  .pill.run { color: var(--accent); border-color: var(--accent); }
+  .links a { color: var(--accent); margin-right: 14px; text-decoration: none; }
+  pre { background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; font-size: 12px; max-height: 160px; overflow: auto; white-space: pre-wrap; margin: 8px 0 0; }
+  iframe { width: 100%; height: 75vh; border: 1px solid var(--line); border-radius: 8px; margin-top: 10px; background: #fff; }
+  @media (max-width: 640px) { form { grid-template-columns: 1fr 1fr; } .half { grid-column: 1 / -1; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Lecture Notes</h1>
+  <p class="sub">Upload slides: the model (Qwen3-4B, SFT + GRPO) writes LaTeX lecture notes and a cheat sheet on a free GPU of the v100 server.</p>
+
+  <div class="card">
+    <form id="f">
+      <div id="drop" class="wide">Drop slides here or click to choose (.pdf, .pptx, .tex, .md)</div>
+      <input id="file" name="slides" type="file" accept=".pdf,.pptx,.tex,.md" hidden>
+      <label class="wide">Topic (optional)<input name="topic" placeholder="e.g. The perceptron and multilayer networks"></label>
+      <label>Length<input name="length" placeholder="6 pages"></label>
+      <label>Slides<input name="pages" placeholder="all, or 1-12,15"></label>
+      <label>Cheat sheet pages<select name="cheatsheet_pages"><option value="">auto</option><option>1</option><option>2</option><option>3</option></select></label>
+      <label>Language<select name="lang"><option value="">English</option><option value="ru">Russian</option></select></label>
+      <div class="wide row">
+        <button id="go" type="submit">Generate</button>
+        <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" name="no_cheatsheet"> no cheat sheet</label>
+        <span id="msg" class="err"></span>
+      </div>
+    </form>
+  </div>
+
+  <div class="card"><div id="jobs"><span class="meta">No jobs yet.</span></div></div>
+  <div class="card" id="viewer" hidden><div class="row"><b id="vt"></b><button class="ghost" onclick="closeV()">close</button></div><iframe id="vf"></iframe></div>
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const file = $('#file'), drop = $('#drop');
+const LABEL = {new:'queued', uploading:'uploading', queued:'waiting', waiting_gpu:'waiting for a free GPU', loading:'starting model',
+               generating:'writing notes', fetching:'downloading', done:'done', error:'error', cancelled:'cancelled'};
+const FINAL = new Set(['done','error','cancelled']);
+const logs = new Set(); let last = '';
+
+drop.onclick = () => file.click();
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) { file.files = e.dataTransfer.files; pick(); } };
+file.onchange = pick;
+function pick() { const f = file.files[0]; if (f) { drop.textContent = f.name + ' · ' + (f.size/1e6).toFixed(1) + ' MB'; drop.classList.add('has'); } }
+
+$('#f').onsubmit = async e => {
+  e.preventDefault();
+  $('#msg').textContent = '';
+  if (!file.files[0]) { $('#msg').textContent = 'Choose a slides file'; return; }
+  $('#go').disabled = true;
+  try {
+    const r = await fetch('/api/jobs', {method:'POST', body: new FormData(e.target)});
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || r.status);
+    e.target.reset(); drop.textContent = 'Drop slides here or click to choose (.pdf, .pptx, .tex, .md)'; drop.classList.remove('has');
+    refresh();
+  } catch (err) { $('#msg').textContent = err.message; }
+  $('#go').disabled = false;
+};
+
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ago = t => { const s = Math.round(Date.now()/1000 - t); return s < 90 ? s + ' s' : Math.round(s/60) + ' min'; };
+
+async function act(id, what) { await fetch(`/api/jobs/${id}/${what}`, {method:'POST'}); refresh(); }
+async function fillLog(id) {
+  const el = document.getElementById('log-' + id); if (!el) return;
+  const j = await (await fetch('/api/jobs/' + id)).json();
+  el.textContent = j.log || '(log is empty)'; el.hidden = false;
+}
+function toggleLog(id) {
+  if (logs.has(id)) { logs.delete(id); document.getElementById('log-' + id).hidden = true; }
+  else { logs.add(id); fillLog(id); }
+}
+function preview(id, f, title) {
+  $('#vf').src = `/files/${id}/${f}`; $('#vt').textContent = title; $('#viewer').hidden = false;
+  $('#viewer').scrollIntoView({behavior: 'smooth'});
+}
+function closeV() { $('#viewer').hidden = true; $('#vf').src = 'about:blank'; }
+
+async function refresh() {
+  let jobs;
+  try { jobs = await (await fetch('/api/jobs')).json(); } catch { return; }
+  if (!jobs.length) return;
+  const sig = JSON.stringify(jobs.map(j => [j.id, j.state, j.message, j.gpu])) + Math.floor(Date.now() / 30000);
+  if (sig === last) return; last = sig;
+  $('#jobs').innerHTML = jobs.map(j => {
+    const run = !FINAL.has(j.state);
+    const cls = j.state === 'done' ? 'done' : run ? 'run' : j.state;
+    const dur = run ? ago(j.created) : j.finished ? Math.round((j.finished - j.created)/60) + ' min' : '';
+    const opts = [j.length, j.pages && 'slides ' + j.pages, j.lang].filter(Boolean).join(' · ');
+    let links = '';
+    if (j.state === 'done') links = `<div class="links row" style="margin-top:6px">
+        <a href="#" onclick="preview('${j.id}','notes.pdf','Lecture notes');return false">Notes</a>
+        ${j.no_cheatsheet ? '' : `<a href="#" onclick="preview('${j.id}','cheatsheet.pdf','Cheat sheet');return false">Cheat sheet</a>`}
+        <a href="/files/${j.id}/notes.pdf" target="_blank">PDF</a>
+        <a href="/files/${j.id}/notes.tex" target="_blank">.tex</a>
+        <a href="/files/${j.id}/report.md" target="_blank">report</a>
+        <a href="/files/${j.id}/bundle.zip">all (.zip)</a></div>`;
+    return `<div class="job">
+      <div class="row"><h3>${esc(j.topic || j.slides_name)}</h3>
+        <span class="pill ${cls}">${LABEL[j.state] || j.state}${j.gpu != null && run ? ' · GPU ' + j.gpu : ''}</span>
+        <span class="meta">${dur}</span></div>
+      <div class="meta">${esc(j.slides_name)}${opts ? ' · ' + esc(opts) : ''}${j.message ? ' — ' + esc(j.message) : ''}</div>
+      ${links}
+      <div class="row" style="margin-top:6px">
+        <button class="ghost" onclick="toggleLog('${j.id}')">log</button>
+        ${run ? `<button class="ghost" onclick="act('${j.id}','cancel')">cancel</button>`
+              : `<button class="ghost" onclick="if(confirm('Delete this job?'))act('${j.id}','delete')">delete</button>`}
+      </div>
+      <pre id="log-${j.id}" hidden></pre></div>`;
+  }).join('');
+  logs.forEach(fillLog);
+}
+refresh(); setInterval(refresh, 5000);
+</script>
+</body>
+</html>

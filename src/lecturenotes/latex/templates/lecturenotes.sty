@@ -1,0 +1,240 @@
+%% lecturenotes.sty -- house style for LectureNotes agent output.
+%% The model never writes a preamble: everything it may use is defined here.
+%% Optional packages are loaded only when installed, with graceful fallbacks,
+%% so the same template works on full TeX Live, TinyTeX and MiKTeX.
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{lecturenotes}[2026/11/15 v0.1 LectureNotes house style]
+
+\newif\ifln@cheatsheet \ln@cheatsheetfalse
+\DeclareOption{cheatsheet}{\ln@cheatsheettrue}
+\ProcessOptions\relax
+
+%% ------------------------------------------------------------------ core
+\RequirePackage{amsmath,amssymb,amsthm}
+\RequirePackage{bm}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{array}
+\RequirePackage{multicol}
+\RequirePackage{listings}
+\RequirePackage{url}
+\newif\ifln@mathtools \ln@mathtoolsfalse
+\IfFileExists{mathtools.sty}{\RequirePackage{mathtools}\ln@mathtoolstrue}{}
+\IfFileExists{booktabs.sty}{\RequirePackage{booktabs}}{%
+  \providecommand{\toprule}{\hline}\providecommand{\midrule}{\hline}%
+  \providecommand{\bottomrule}{\hline}\providecommand{\cmidrule}[1]{}}
+\IfFileExists{microtype.sty}{\RequirePackage{microtype}}{}
+
+%% ------------------------------------------------------------------ palette
+%% Keep in sync with lecturenotes.figures.style.PALETTE
+\definecolor{lnblue}{HTML}{1F5FAD}
+\definecolor{lnteal}{HTML}{0F7B6C}
+\definecolor{lnorange}{HTML}{C8642A}
+\definecolor{lnred}{HTML}{B3261E}
+\definecolor{lnpurple}{HTML}{6B4FA0}
+\definecolor{lngold}{HTML}{A77B0A}
+\definecolor{lngray}{HTML}{5F6368}
+\definecolor{lnbg}{HTML}{F5F7FA}
+
+%% ------------------------------------------------------------------ optional packages
+\newif\ifln@tcb \ln@tcbfalse
+%% Feature flags \lnno<feature> may be defined *before* loading this package
+%% (the harness probes what actually works on this machine; see latex/capabilities.py).
+\newcommand{\ln@ifenabled}[3]{\@ifundefined{lnno#1}{\IfFileExists{#2}{#3}{}}{}}
+\ln@ifenabled{tikz}{tikz.sty}{%
+  \RequirePackage{tikz}%
+  \usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,decorations.pathreplacing,patterns,fit,backgrounds,matrix}%
+}{}
+\ln@ifenabled{pgfplots}{pgfplots.sty}{\RequirePackage{pgfplots}\pgfplotsset{compat=newest}}
+\ln@ifenabled{tcolorbox}{tcolorbox.sty}{%
+  \RequirePackage{tcolorbox}\tcbuselibrary{skins,breakable}\ln@tcbtrue}
+\ln@ifenabled{siunitx}{siunitx.sty}{\RequirePackage{siunitx}}
+\@ifpackageloaded{siunitx}{}{%
+  \providecommand\SI[2]{\ensuremath{#1\,\mathrm{#2}}}%
+  \providecommand\si[1]{\ensuremath{\mathrm{#1}}}%
+  \providecommand\num[1]{#1}\providecommand\qty[2]{\ensuremath{#1\,\mathrm{#2}}}%
+  \providecommand\unit[1]{\ensuremath{\mathrm{#1}}}%
+  \providecommand\metre{m}\providecommand\second{s}\providecommand\kilogram{kg}\providecommand\gram{g}%
+  \providecommand\newton{N}\providecommand\joule{J}\providecommand\watt{W}\providecommand\volt{V}%
+  \providecommand\ampere{A}\providecommand\ohm{\Omega}\providecommand\hertz{Hz}\providecommand\kelvin{K}%
+  \providecommand\mole{mol}\providecommand\pascal{Pa}\providecommand\coulomb{C}\providecommand\tesla{T}%
+  \providecommand\kilo{k}\providecommand\milli{m}\providecommand\micro{\mu}\providecommand\nano{n}%
+  \providecommand\mega{M}\providecommand\giga{G}\providecommand\centi{c}%
+  \providecommand\per{/}\providecommand\squared{^2}\providecommand\cubed{^3}\providecommand\percent{\%}}
+\IfFileExists{enumitem.sty}{%
+  \RequirePackage{enumitem}%
+  \ifln@cheatsheet\setlist{nosep,leftmargin=1.1em}\else\setlist{itemsep=2pt,topsep=4pt,parsep=0pt}\fi}{}
+\IfFileExists{caption.sty}{\RequirePackage[font=small,labelfont={bf,sf}]{caption}}{}
+\IfFileExists{titlesec.sty}{%
+  \RequirePackage{titlesec}%
+  \ifln@cheatsheet\else
+  \titleformat{\section}{\Large\bfseries\sffamily\color{lnblue!80!black}}{\thesection}{0.8em}{}[{\color{lnblue!25}\titlerule[0.8pt]}]%
+  \titleformat{\subsection}{\large\bfseries\sffamily\color{lnblue!70!black}}{\thesubsection}{0.7em}{}%
+  \titleformat{\subsubsection}{\normalsize\bfseries\sffamily\color{lnblue!60!black}}{\thesubsubsection}{0.6em}{}%
+  \fi}{}
+
+%% ------------------------------------------------------------------ localisable labels
+\newcommand{\lnlabeldefinition}{Definition}
+\newcommand{\lnlabeltheorem}{Theorem}
+\newcommand{\lnlabellemma}{Lemma}
+\newcommand{\lnlabelproposition}{Proposition}
+\newcommand{\lnlabelcorollary}{Corollary}
+\newcommand{\lnlabelexample}{Example}
+\newcommand{\lnlabelremark}{Remark}
+\newcommand{\lnlabelkeyidea}{Key idea}
+\newcommand{\lnlabelwarning}{Pitfall}
+\newcommand{\lnlabelsummary}{Summary}
+\newcommand{\lnlabelexercise}{Exercise}
+\newcommand{\lnlabelsolution}{Solution}
+\newcommand{\lnlabeloverview}{Overview}
+\newcommand{\lnlabelobjectives}{Learning objectives}
+\newcommand{\lnlabelprereq}{Prerequisites}
+
+%% ------------------------------------------------------------------ counters
+\newcounter{lnthm}[section]
+\renewcommand{\thelnthm}{\thesection.\arabic{lnthm}}
+\newcounter{lnex}[section]
+\renewcommand{\thelnex}{\thesection.\arabic{lnex}}
+\newcounter{lnexer}[section]
+\renewcommand{\thelnexer}{\thesection.\arabic{lnexer}}
+
+%% #1 = optional title; prints " (title)" if non-empty
+\newcommand{\ln@opt}[1]{\if\relax\detokenize{#1}\relax\else\ (#1)\fi}
+
+\ifln@tcb
+  \tcbset{
+    lnbox/.style={enhanced, breakable, frame hidden, boxrule=0pt, arc=0pt, outer arc=0pt,
+      borderline west={2.6pt}{0pt}{#1},
+      colback=#1!5!white, coltitle=#1!80!black,
+      fonttitle=\bfseries\sffamily, attach title to upper, after title={.\enspace},
+      left=8pt, right=8pt, top=5pt, bottom=5pt, before skip=10pt, after skip=10pt},
+  }
+\fi
+
+%% \ln@defbox{env}{label macro}{color}{counter or empty}
+\newcommand{\ln@defbox}[4]{%
+  \ifln@tcb
+    \newenvironment{#1}[1][]{%
+      \if\relax\detokenize{#4}\relax\def\ln@num{}\else\refstepcounter{#4}\def\ln@num{~\csname the#4\endcsname}\fi
+      \begin{tcolorbox}[lnbox=#3,title={#2\ln@num\ln@opt{##1}}]}%
+      {\end{tcolorbox}}%
+  \else
+    \newenvironment{#1}[1][]{%
+      \if\relax\detokenize{#4}\relax\def\ln@num{}\else\refstepcounter{#4}\def\ln@num{~\csname the#4\endcsname}\fi
+      \par\medskip\noindent{\color{#3}\bfseries\sffamily #2\ln@num\ln@opt{##1}.}\enspace\ignorespaces}%
+      {\par\medskip}%
+  \fi}
+
+\ln@defbox{definition}{\lnlabeldefinition}{lnblue}{lnthm}
+\ln@defbox{theorem}{\lnlabeltheorem}{lnpurple}{lnthm}
+\ln@defbox{lemma}{\lnlabellemma}{lnpurple}{lnthm}
+\ln@defbox{proposition}{\lnlabelproposition}{lnpurple}{lnthm}
+\ln@defbox{corollary}{\lnlabelcorollary}{lnpurple}{lnthm}
+\ln@defbox{example}{\lnlabelexample}{lnteal}{lnex}
+\ln@defbox{remark}{\lnlabelremark}{lngray}{}
+\ln@defbox{keyidea}{\lnlabelkeyidea}{lngold}{}
+\ln@defbox{warning}{\lnlabelwarning}{lnred}{}
+\ln@defbox{summary}{\lnlabelsummary}{lnpurple}{}
+\ln@defbox{exercise}{\lnlabelexercise}{lnorange}{lnexer}
+\ln@defbox{solution}{\lnlabelsolution}{lngray}{}
+\ln@defbox{lnoverview}{\lnlabeloverview}{lnblue}{}
+
+%% common aliases a model may reach for
+\newenvironment{intuition}[1][]{\begin{keyidea}[#1]}{\end{keyidea}}
+\newenvironment{note}[1][]{\begin{remark}[#1]}{\end{remark}}
+
+%% ------------------------------------------------------------------ text macros
+\newcommand{\term}[1]{\textbf{\color{lnblue!85!black}#1}}
+\newcommand{\important}[1]{\textbf{\color{lnred!85!black}#1}}
+
+%% ------------------------------------------------------------------ math macros
+\providecommand{\R}{\mathbb{R}}
+\providecommand{\N}{\mathbb{N}}
+\providecommand{\Z}{\mathbb{Z}}
+\providecommand{\Q}{\mathbb{Q}}
+\providecommand{\C}{\mathbb{C}}
+\providecommand{\E}{\mathbb{E}}
+\providecommand{\Prob}{\mathbb{P}}
+\providecommand{\dd}{\mathop{}\!\mathrm{d}}
+\providecommand{\vect}[1]{\bm{#1}}
+\providecommand{\inner}[2]{\left\langle #1,\, #2\right\rangle}
+\@ifundefined{Var}{\DeclareMathOperator{\Var}{Var}}{}
+\@ifundefined{Cov}{\DeclareMathOperator{\Cov}{Cov}}{}
+\@ifundefined{tr}{\DeclareMathOperator{\tr}{tr}}{}
+\@ifundefined{rank}{\DeclareMathOperator{\rank}{rank}}{}
+\@ifundefined{diag}{\DeclareMathOperator{\diag}{diag}}{}
+\@ifundefined{sign}{\DeclareMathOperator{\sign}{sign}}{}
+\@ifundefined{argmin}{\DeclareMathOperator*{\argmin}{arg\,min}}{}
+\@ifundefined{argmax}{\DeclareMathOperator*{\argmax}{arg\,max}}{}
+\ifln@mathtools
+  \@ifundefined{abs}{\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}}{}
+  \@ifundefined{norm}{\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}}{}
+  \@ifundefined{floor}{\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}}{}
+  \@ifundefined{ceil}{\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}}{}
+\else
+  % minimal stand-ins (no starred/optional-size variants)
+  \providecommand{\abs}[1]{\left\lvert #1\right\rvert}
+  \providecommand{\norm}[1]{\left\lVert #1\right\rVert}
+  \providecommand{\floor}[1]{\left\lfloor #1\right\rfloor}
+  \providecommand{\ceil}[1]{\left\lceil #1\right\rceil}
+\fi
+
+%% ------------------------------------------------------------------ code listings
+\lstdefinestyle{ln}{
+  basicstyle=\ttfamily\small, keywordstyle=\color{lnblue}\bfseries,
+  commentstyle=\color{lngray}\itshape, stringstyle=\color{lnorange},
+  numbers=left, numberstyle=\tiny\color{lngray}, numbersep=6pt,
+  backgroundcolor=\color{lnbg}, frame=leftline, rulecolor=\color{lnblue!40}, framerule=1.5pt,
+  breaklines=true, showstringspaces=false, columns=fullflexible, keepspaces=true,
+  tabsize=4, xleftmargin=1.8em, framexleftmargin=0.6em, aboveskip=8pt, belowskip=8pt}
+\lstset{style=ln}
+
+%% ------------------------------------------------------------------ figures
+%% \lnfigure{includegraphics options}{file}{caption}{label}
+\newcommand{\lnfigure}[4]{%
+  \begin{figure}[htbp]\centering\includegraphics[#1]{#2}\caption{#3}\label{#4}\end{figure}}
+%% non-floating variant, used when a figure block sits inside a box (floats are illegal there)
+\newcommand{\lnfigurehere}[4]{%
+  \par\smallskip\begin{center}\includegraphics[#1]{#2}\par\smallskip
+  \refstepcounter{figure}\label{#4}{\small\textbf{\sffamily Figure~\thefigure:}~#3}\end{center}}
+\newcommand{\lnmissingfigurehere}[2]{%
+  \par\smallskip\begin{center}\fcolorbox{lngray!60}{lnbg}{\parbox{0.55\linewidth}{\centering\small\itshape\color{lngray}figure unavailable}}\par\smallskip
+  \refstepcounter{figure}\label{#2}{\small\textbf{\sffamily Figure~\thefigure:}~#1}\end{center}}
+%% placeholder for a figure the harness could not render (keeps \ref targets valid)
+\newcommand{\lnmissingfigure}[2]{%
+  \begin{figure}[htbp]\centering
+  \fcolorbox{lngray!60}{lnbg}{\parbox{0.55\linewidth}{\centering\small\itshape\color{lngray}figure unavailable}}%
+  \caption{#1}\label{#2}\end{figure}}
+
+%% ------------------------------------------------------------------ title block
+\newcommand{\lnmaketitle}[3]{%
+  \thispagestyle{plain}%
+  \begingroup\setlength{\parindent}{0pt}%
+  {\color{lnblue}\rule{\linewidth}{2pt}}\par\vspace{8pt}%
+  {\sffamily\bfseries\huge\color{lnblue!85!black}#1\par}%
+  \if\relax\detokenize{#2}\relax\else\vspace{5pt}{\sffamily\Large\color{lngray}#2\par}\fi
+  \vspace{7pt}{\sffamily\small\color{lngray}#3\par}%
+  \vspace{4pt}{\color{lnblue}\rule{\linewidth}{0.6pt}}\par\vspace{12pt}%
+  \endgroup}
+
+%% ------------------------------------------------------------------ cheat sheet
+\newcounter{lncs}
+\newcommand{\ln@cscolor}{%
+  \ifcase\numexpr\value{lncs}-5*((\value{lncs}-2)/5)\relax % (a-2)/5 rounds == floor(a/5)
+    lnblue\or lnteal\or lnpurple\or lnorange\or lnred\else lnblue\fi}
+\ifln@tcb
+  \newenvironment{csbox}[1]{%
+    \stepcounter{lncs}\edef\ln@cc{\ln@cscolor}%
+    \begin{tcolorbox}[enhanced, colback=white, colframe=\ln@cc!75!black, colbacktitle=\ln@cc!12!white,
+      coltitle=\ln@cc!80!black, boxrule=0.5pt, arc=1.2pt, left=2.5pt, right=2.5pt, top=1.5pt, bottom=2pt,
+      boxsep=1pt, toptitle=0.6pt, bottomtitle=0.6pt, fonttitle=\bfseries\sffamily,
+      before skip=3pt, after skip=3pt, title={#1}]%
+    \setlength{\abovedisplayskip}{2pt}\setlength{\belowdisplayskip}{2pt}%
+    \setlength{\abovedisplayshortskip}{1pt}\setlength{\belowdisplayshortskip}{1pt}}%
+    {\end{tcolorbox}}
+\else
+  \newenvironment{csbox}[1]{\par\smallskip\noindent{\bfseries\sffamily\color{lnblue}#1}\par\nopagebreak}{\par\smallskip}
+\fi
+
+\IfFileExists{hyperref.sty}{\RequirePackage[hidelinks]{hyperref}}{}
+\endinput

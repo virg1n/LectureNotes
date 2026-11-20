@@ -1,0 +1,28 @@
+<# Jinja2 template for a dense landscape cheat sheet #>
+\documentclass[10pt,a4paper,landscape]{article}
+<% if language == 'ru' %>
+\usepackage[T2A,T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian,english]{babel}
+\AtBeginDocument{\selectlanguage{russian}}
+<% else %>
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+<% endif %>
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage[a4paper,landscape,margin=<< margin >>]{geometry}
+\usepackage[cheatsheet]{lecturenotes}
+\setlength{\columnsep}{8pt}
+\setlength{\columnseprule}{0.2pt}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{1pt}
+\pagestyle{empty}
+
+\begin{document}
+\<< fontsize >>
+\begin{multicols*}{<< columns >>}
+{\sffamily\bfseries\large\color{lnblue!85!black}<< title >>}\par
+{\sffamily\scriptsize\color{lngray}<< meta >>}\par\vspace{2pt}
+\input{sections/cheatsheet}
+\end{multicols*}
+\end{document}

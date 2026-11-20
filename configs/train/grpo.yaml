@@ -1,0 +1,34 @@
+# GRPO with harness rewards. GPUs 0-3: vLLM rollouts; GPUs 4-7: training.
+#   CUDA_VISIBLE_DEVICES=4,5,6,7 torchrun --nproc_per_node 4 -m lecturenotes.training.grpo --config configs/train/grpo.yaml
+# The policy is a FRESH LoRA on the merged SFT model: the KL reference (adapter disabled) is then
+# exactly the starting policy, and vLLM serves the merged base + hot-swapped adapters.
+model: ${POLICY_BASE:-checkpoints/sft-merged}
+output_dir: checkpoints/grpo
+train_file: data/sft/train.jsonl   # required by TrainConfig; GRPO samples from prompt_files
+max_len: 12288
+lr: 1.0e-5
+dtype: fp16
+use_lora: true
+lora_r: 64
+lora_alpha: 128
+lora_dropout: 0.0           # dropout breaks ratio == 1 at the start of each round
+max_grad_norm: 1.0
+group_size: 8
+prompts_per_round: 64
+rounds: 60
+clip_eps: 0.2
+kl_beta: 0.02
+ppo_epochs: 1
+grad_accum: 16
+temperature: 1.0
+top_p: 0.95
+requests_per_server: 4
+rollout_gpus: [1, 2, 3]      # free on the shared node (0 = VLM judge)
+vllm_port: 8100
+publish: merge              # vLLM 0.10 LoRA triton kernels fail to compile on sm_70
+reward_workers: 18
+dist_timeout_hours: 6
+save_every: 10               # /public quota is tight
+prompt_files: [data/sft/train.jsonl]
+# figure/plan/cheat-sheet rewards are structural (any valid plot scores ~1): keep them a small share
+task_mix: {write_section: 0.55, repair_latex: 0.2, repair_figure: 0.1, figure: 0.1, web_query: 0.03, pick_image: 0.02}

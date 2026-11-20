@@ -1,0 +1,33 @@
+<# Minimal document used to compile a single section (or a cheat sheet body) in isolation. #>
+<% if cheatsheet %>
+\documentclass[10pt,a4paper,landscape]{article}
+<% else %>
+\documentclass[11pt,a4paper]{article}
+<% endif %>
+<% if language == 'ru' %>
+\usepackage[T2A,T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian,english]{babel}
+\AtBeginDocument{\selectlanguage{russian}}
+<% else %>
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+<% endif %>
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+<% if cheatsheet %>
+\usepackage[a4paper,landscape,margin=0.7cm]{geometry}
+\usepackage[cheatsheet]{lecturenotes}
+\setlength{\columnsep}{8pt}\setlength{\parindent}{0pt}\setlength{\parskip}{1pt}
+\pagestyle{empty}
+<% else %>
+\usepackage[a4paper,margin=2.3cm]{geometry}
+\usepackage{lecturenotes}
+<% endif %>
+\graphicspath{{figures/}}
+\begin{document}
+<% if cheatsheet %>\<< fontsize >>\begin{multicols*}{<< columns >>}<% endif %>
+
+\input{sections/<< section >>}
+
+<% if cheatsheet %>\end{multicols*}<% endif %>
+\end{document}

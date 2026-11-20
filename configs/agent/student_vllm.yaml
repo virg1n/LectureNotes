@@ -1,0 +1,16 @@
+# Fine-tuned student served by vLLM (scripts/serve_vllm.sh). Inference-time scaling knobs live in `harness`.
+backends:
+  student:
+    type: openai
+    base_url: ${LN_STUDENT_URL:-http://127.0.0.1:8000/v1}
+    model: student
+    max_concurrency: 32
+    disable_thinking: true
+routes: {"*": student}
+harness:
+  samples_per_section: 3        # best-of-3 drafts reranked by the harness reward
+  max_latex_repairs: 3
+  max_figure_repairs: 2
+  revise_rounds: 1
+  section_concurrency: 6
+  figure_workers: 6

@@ -1,0 +1,546 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage[a4paper,margin=2.3cm,headheight=14pt]{geometry}
+\setlength{\parskip}{3pt plus 1pt}
+\makeatletter
+%% lecturenotes.sty -- house style for LectureNotes agent output.
+%% The model never writes a preamble: everything it may use is defined here.
+%% Optional packages are loaded only when installed, with graceful fallbacks,
+%% so the same template works on full TeX Live, TinyTeX and MiKTeX.
+
+
+
+\newif\ifln@cheatsheet \ln@cheatsheetfalse
+
+
+%% ------------------------------------------------------------------ core
+\RequirePackage{amsmath,amssymb,amsthm}
+\RequirePackage{bm}
+\RequirePackage{xcolor}
+\RequirePackage{graphicx}
+\RequirePackage{array}
+\RequirePackage{multicol}
+\RequirePackage{listings}
+\RequirePackage{url}
+\newif\ifln@mathtools \ln@mathtoolsfalse
+\IfFileExists{mathtools.sty}{\RequirePackage{mathtools}\ln@mathtoolstrue}{}
+\IfFileExists{booktabs.sty}{\RequirePackage{booktabs}}{%
+  \providecommand{\toprule}{\hline}\providecommand{\midrule}{\hline}%
+  \providecommand{\bottomrule}{\hline}\providecommand{\cmidrule}[1]{}}
+\IfFileExists{microtype.sty}{\RequirePackage{microtype}}{}
+
+%% ------------------------------------------------------------------ palette
+%% Keep in sync with lecturenotes.figures.style.PALETTE
+\definecolor{lnblue}{HTML}{1F5FAD}
+\definecolor{lnteal}{HTML}{0F7B6C}
+\definecolor{lnorange}{HTML}{C8642A}
+\definecolor{lnred}{HTML}{B3261E}
+\definecolor{lnpurple}{HTML}{6B4FA0}
+\definecolor{lngold}{HTML}{A77B0A}
+\definecolor{lngray}{HTML}{5F6368}
+\definecolor{lnbg}{HTML}{F5F7FA}
+
+%% ------------------------------------------------------------------ optional packages
+\newif\ifln@tcb \ln@tcbfalse
+%% Feature flags \lnno<feature> may be defined *before* loading this package
+%% (the harness probes what actually works on this machine; see latex/capabilities.py).
+\newcommand{\ln@ifenabled}[3]{\@ifundefined{lnno#1}{\IfFileExists{#2}{#3}{}}{}}
+\ln@ifenabled{tikz}{tikz.sty}{%
+  \RequirePackage{tikz}%
+  \usetikzlibrary{arrows.meta,positioning,calc,shapes.geometric,decorations.pathreplacing,patterns,fit,backgrounds,matrix}%
+}{}
+\ln@ifenabled{pgfplots}{pgfplots.sty}{\RequirePackage{pgfplots}\pgfplotsset{compat=newest}}
+\ln@ifenabled{tcolorbox}{tcolorbox.sty}{%
+  \RequirePackage{tcolorbox}\tcbuselibrary{skins,breakable}\ln@tcbtrue}
+\ln@ifenabled{siunitx}{siunitx.sty}{\RequirePackage{siunitx}}
+\@ifpackageloaded{siunitx}{}{%
+  \providecommand\SI[2]{\ensuremath{#1\,\mathrm{#2}}}%
+  \providecommand\si[1]{\ensuremath{\mathrm{#1}}}%
+  \providecommand\num[1]{#1}\providecommand\qty[2]{\ensuremath{#1\,\mathrm{#2}}}%
+  \providecommand\unit[1]{\ensuremath{\mathrm{#1}}}%
+  \providecommand\metre{m}\providecommand\second{s}\providecommand\kilogram{kg}\providecommand\gram{g}%
+  \providecommand\newton{N}\providecommand\joule{J}\providecommand\watt{W}\providecommand\volt{V}%
+  \providecommand\ampere{A}\providecommand\ohm{\Omega}\providecommand\hertz{Hz}\providecommand\kelvin{K}%
+  \providecommand\mole{mol}\providecommand\pascal{Pa}\providecommand\coulomb{C}\providecommand\tesla{T}%
+  \providecommand\kilo{k}\providecommand\milli{m}\providecommand\micro{\mu}\providecommand\nano{n}%
+  \providecommand\mega{M}\providecommand\giga{G}\providecommand\centi{c}%
+  \providecommand\per{/}\providecommand\squared{^2}\providecommand\cubed{^3}\providecommand\percent{\%}}
+\IfFileExists{enumitem.sty}{%
+  \RequirePackage{enumitem}%
+  \ifln@cheatsheet\setlist{nosep,leftmargin=1.1em}\else\setlist{itemsep=2pt,topsep=4pt,parsep=0pt}\fi}{}
+\IfFileExists{caption.sty}{\RequirePackage[font=small,labelfont={bf,sf}]{caption}}{}
+\IfFileExists{titlesec.sty}{%
+  \RequirePackage{titlesec}%
+  \ifln@cheatsheet\else
+  \titleformat{\section}{\Large\bfseries\sffamily\color{lnblue!80!black}}{\thesection}{0.8em}{}[{\color{lnblue!25}\titlerule[0.8pt]}]%
+  \titleformat{\subsection}{\large\bfseries\sffamily\color{lnblue!70!black}}{\thesubsection}{0.7em}{}%
+  \titleformat{\subsubsection}{\normalsize\bfseries\sffamily\color{lnblue!60!black}}{\thesubsubsection}{0.6em}{}%
+  \fi}{}
+
+%% ------------------------------------------------------------------ localisable labels
+\newcommand{\lnlabeldefinition}{Definition}
+\newcommand{\lnlabeltheorem}{Theorem}
+\newcommand{\lnlabellemma}{Lemma}
+\newcommand{\lnlabelproposition}{Proposition}
+\newcommand{\lnlabelcorollary}{Corollary}
+\newcommand{\lnlabelexample}{Example}
+\newcommand{\lnlabelremark}{Remark}
+\newcommand{\lnlabelkeyidea}{Key idea}
+\newcommand{\lnlabelwarning}{Pitfall}
+\newcommand{\lnlabelsummary}{Summary}
+\newcommand{\lnlabelexercise}{Exercise}
+\newcommand{\lnlabelsolution}{Solution}
+\newcommand{\lnlabeloverview}{Overview}
+\newcommand{\lnlabelobjectives}{Learning objectives}
+\newcommand{\lnlabelprereq}{Prerequisites}
+
+%% ------------------------------------------------------------------ counters
+\newcounter{lnthm}[section]
+\renewcommand{\thelnthm}{\thesection.\arabic{lnthm}}
+\newcounter{lnex}[section]
+\renewcommand{\thelnex}{\thesection.\arabic{lnex}}
+\newcounter{lnexer}[section]
+\renewcommand{\thelnexer}{\thesection.\arabic{lnexer}}
+
+%% #1 = optional title; prints " (title)" if non-empty
+\newcommand{\ln@opt}[1]{\if\relax\detokenize{#1}\relax\else\ (#1)\fi}
+
+\ifln@tcb
+  \tcbset{
+    lnbox/.style={enhanced, breakable, frame hidden, boxrule=0pt, arc=0pt, outer arc=0pt,
+      borderline west={2.6pt}{0pt}{#1},
+      colback=#1!5!white, coltitle=#1!80!black,
+      fonttitle=\bfseries\sffamily, attach title to upper, after title={.\enspace},
+      left=8pt, right=8pt, top=5pt, bottom=5pt, before skip=10pt, after skip=10pt},
+  }
+\fi
+
+%% \ln@defbox{env}{label macro}{color}{counter or empty}
+\newcommand{\ln@defbox}[4]{%
+  \ifln@tcb
+    \newenvironment{#1}[1][]{%
+      \if\relax\detokenize{#4}\relax\def\ln@num{}\else\refstepcounter{#4}\def\ln@num{~\csname the#4\endcsname}\fi
+      \begin{tcolorbox}[lnbox=#3,title={#2\ln@num\ln@opt{##1}}]}%
+      {\end{tcolorbox}}%
+  \else
+    \newenvironment{#1}[1][]{%
+      \if\relax\detokenize{#4}\relax\def\ln@num{}\else\refstepcounter{#4}\def\ln@num{~\csname the#4\endcsname}\fi
+      \par\medskip\noindent{\color{#3}\bfseries\sffamily #2\ln@num\ln@opt{##1}.}\enspace\ignorespaces}%
+      {\par\medskip}%
+  \fi}
+
+\ln@defbox{definition}{\lnlabeldefinition}{lnblue}{lnthm}
+\ln@defbox{theorem}{\lnlabeltheorem}{lnpurple}{lnthm}
+\ln@defbox{lemma}{\lnlabellemma}{lnpurple}{lnthm}
+\ln@defbox{proposition}{\lnlabelproposition}{lnpurple}{lnthm}
+\ln@defbox{corollary}{\lnlabelcorollary}{lnpurple}{lnthm}
+\ln@defbox{example}{\lnlabelexample}{lnteal}{lnex}
+\ln@defbox{remark}{\lnlabelremark}{lngray}{}
+\ln@defbox{keyidea}{\lnlabelkeyidea}{lngold}{}
+\ln@defbox{warning}{\lnlabelwarning}{lnred}{}
+\ln@defbox{summary}{\lnlabelsummary}{lnpurple}{}
+\ln@defbox{exercise}{\lnlabelexercise}{lnorange}{lnexer}
+\ln@defbox{solution}{\lnlabelsolution}{lngray}{}
+\ln@defbox{lnoverview}{\lnlabeloverview}{lnblue}{}
+
+%% common aliases a model may reach for
+\newenvironment{intuition}[1][]{\begin{keyidea}[#1]}{\end{keyidea}}
+\newenvironment{note}[1][]{\begin{remark}[#1]}{\end{remark}}
+
+%% ------------------------------------------------------------------ text macros
+\newcommand{\term}[1]{\textbf{\color{lnblue!85!black}#1}}
+\newcommand{\important}[1]{\textbf{\color{lnred!85!black}#1}}
+
+%% ------------------------------------------------------------------ math macros
+\providecommand{\R}{\mathbb{R}}
+\providecommand{\N}{\mathbb{N}}
+\providecommand{\Z}{\mathbb{Z}}
+\providecommand{\Q}{\mathbb{Q}}
+\providecommand{\C}{\mathbb{C}}
+\providecommand{\E}{\mathbb{E}}
+\providecommand{\Prob}{\mathbb{P}}
+\providecommand{\dd}{\mathop{}\!\mathrm{d}}
+\providecommand{\vect}[1]{\bm{#1}}
+\providecommand{\inner}[2]{\left\langle #1,\, #2\right\rangle}
+\@ifundefined{Var}{\DeclareMathOperator{\Var}{Var}}{}
+\@ifundefined{Cov}{\DeclareMathOperator{\Cov}{Cov}}{}
+\@ifundefined{tr}{\DeclareMathOperator{\tr}{tr}}{}
+\@ifundefined{rank}{\DeclareMathOperator{\rank}{rank}}{}
+\@ifundefined{diag}{\DeclareMathOperator{\diag}{diag}}{}
+\@ifundefined{sign}{\DeclareMathOperator{\sign}{sign}}{}
+\@ifundefined{argmin}{\DeclareMathOperator*{\argmin}{arg\,min}}{}
+\@ifundefined{argmax}{\DeclareMathOperator*{\argmax}{arg\,max}}{}
+\ifln@mathtools
+  \@ifundefined{abs}{\DeclarePairedDelimiter{\abs}{\lvert}{\rvert}}{}
+  \@ifundefined{norm}{\DeclarePairedDelimiter{\norm}{\lVert}{\rVert}}{}
+  \@ifundefined{floor}{\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}}{}
+  \@ifundefined{ceil}{\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}}{}
+\else
+  % minimal stand-ins (no starred/optional-size variants)
+  \providecommand{\abs}[1]{\left\lvert #1\right\rvert}
+  \providecommand{\norm}[1]{\left\lVert #1\right\rVert}
+  \providecommand{\floor}[1]{\left\lfloor #1\right\rfloor}
+  \providecommand{\ceil}[1]{\left\lceil #1\right\rceil}
+\fi
+
+%% ------------------------------------------------------------------ code listings
+\lstdefinestyle{ln}{
+  basicstyle=\ttfamily\small, keywordstyle=\color{lnblue}\bfseries,
+  commentstyle=\color{lngray}\itshape, stringstyle=\color{lnorange},
+  numbers=left, numberstyle=\tiny\color{lngray}, numbersep=6pt,
+  backgroundcolor=\color{lnbg}, frame=leftline, rulecolor=\color{lnblue!40}, framerule=1.5pt,
+  breaklines=true, showstringspaces=false, columns=fullflexible, keepspaces=true,
+  tabsize=4, xleftmargin=1.8em, framexleftmargin=0.6em, aboveskip=8pt, belowskip=8pt}
+\lstset{style=ln}
+
+%% ------------------------------------------------------------------ figures
+%% \lnfigure{includegraphics options}{file}{caption}{label}
+\newcommand{\lnfigure}[4]{%
+  \begin{figure}[htbp]\centering\includegraphics[#1]{#2}\caption{#3}\label{#4}\end{figure}}
+%% non-floating variant, used when a figure block sits inside a box (floats are illegal there)
+\newcommand{\lnfigurehere}[4]{%
+  \par\smallskip\begin{center}\includegraphics[#1]{#2}\par\smallskip
+  \refstepcounter{figure}\label{#4}{\small\textbf{\sffamily Figure~\thefigure:}~#3}\end{center}}
+\newcommand{\lnmissingfigurehere}[2]{%
+  \par\smallskip\begin{center}\fcolorbox{lngray!60}{lnbg}{\parbox{0.55\linewidth}{\centering\small\itshape\color{lngray}figure unavailable}}\par\smallskip
+  \refstepcounter{figure}\label{#2}{\small\textbf{\sffamily Figure~\thefigure:}~#1}\end{center}}
+%% placeholder for a figure the harness could not render (keeps \ref targets valid)
+\newcommand{\lnmissingfigure}[2]{%
+  \begin{figure}[htbp]\centering
+  \fcolorbox{lngray!60}{lnbg}{\parbox{0.55\linewidth}{\centering\small\itshape\color{lngray}figure unavailable}}%
+  \caption{#1}\label{#2}\end{figure}}
+
+%% ------------------------------------------------------------------ title block
+\newcommand{\lnmaketitle}[3]{%
+  \thispagestyle{plain}%
+  \begingroup\setlength{\parindent}{0pt}%
+  {\color{lnblue}\rule{\linewidth}{2pt}}\par\vspace{8pt}%
+  {\sffamily\bfseries\huge\color{lnblue!85!black}#1\par}%
+  \if\relax\detokenize{#2}\relax\else\vspace{5pt}{\sffamily\Large\color{lngray}#2\par}\fi
+  \vspace{7pt}{\sffamily\small\color{lngray}#3\par}%
+  \vspace{4pt}{\color{lnblue}\rule{\linewidth}{0.6pt}}\par\vspace{12pt}%
+  \endgroup}
+
+%% ------------------------------------------------------------------ cheat sheet
+\newcounter{lncs}
+\newcommand{\ln@cscolor}{%
+  \ifcase\numexpr\value{lncs}-5*((\value{lncs}-2)/5)\relax % (a-2)/5 rounds == floor(a/5)
+    lnblue\or lnteal\or lnpurple\or lnorange\or lnred\else lnblue\fi}
+\ifln@tcb
+  \newenvironment{csbox}[1]{%
+    \stepcounter{lncs}\edef\ln@cc{\ln@cscolor}%
+    \begin{tcolorbox}[enhanced, colback=white, colframe=\ln@cc!75!black, colbacktitle=\ln@cc!12!white,
+      coltitle=\ln@cc!80!black, boxrule=0.5pt, arc=1.2pt, left=2.5pt, right=2.5pt, top=1.5pt, bottom=2pt,
+      boxsep=1pt, toptitle=0.6pt, bottomtitle=0.6pt, fonttitle=\bfseries\sffamily,
+      before skip=3pt, after skip=3pt, title={#1}]%
+    \setlength{\abovedisplayskip}{2pt}\setlength{\belowdisplayskip}{2pt}%
+    \setlength{\abovedisplayshortskip}{1pt}\setlength{\belowdisplayshortskip}{1pt}}%
+    {\end{tcolorbox}}
+\else
+  \newenvironment{csbox}[1]{\par\smallskip\noindent{\bfseries\sffamily\color{lnblue}#1}\par\nopagebreak}{\par\smallskip}
+\fi
+
+\IfFileExists{hyperref.sty}{\RequirePackage[hidelinks]{hyperref}}{}
+
+
+\makeatother
+\IfFileExists{fancyhdr.sty}{%
+  \usepackage{fancyhdr}\pagestyle{fancy}\fancyhf{}%
+  \fancyhead[L]{\small\sffamily\color{lngray}Kalman Filters}%
+  \fancyhead[R]{\small\sffamily\color{lngray}\nouppercase{\leftmark}}%
+  \fancyfoot[C]{\small\sffamily\color{lngray}\thepage}%
+  \renewcommand{\headrulewidth}{0.3pt}}{}
+\graphicspath{{figures/}}
+
+\begin{document}
+\lnmaketitle{Kalman Filters}{Estimating states in dynamic systems with uncertainty}{November 2026}
+
+\begin{lnoverview}
+This lecture introduces the Kalman filter, a powerful tool for estimating the state of a dynamic system in the presence of noise. We will explore its mathematical foundations, derive the filter equations, and apply them to a simple example. This topic is crucial for understanding modern control systems, robotics, and signal processing.
+
+\smallskip\noindent\textbf{\lnlabelobjectives:}
+\begin{itemize}
+  \item understand the concept of state estimation in dynamic systems
+  \item derive the Kalman filter equations
+  \item apply the Kalman filter to a simple example
+  \item interpret the role of noise and measurement uncertainty
+\end{itemize}
+\noindent\textbf{\lnlabelprereq:} basic linear algebra, probability and statistics, differential equations.
+\end{lnoverview}
+
+{\small\tableofcontents}
+\bigskip
+
+% ---- s1.tex
+\section{Introduction to Kalman Filters}
+
+In many engineering and scientific applications, we often encounter systems that are governed by dynamic processes, where the state of the system changes over time. A \term{state} of a system can be thought of as a set of variables that fully describe the system's behavior at any given time. For example, the position and velocity of a moving object are two states that fully describe its motion. However, measuring these states directly is often impractical or impossible due to noise or limited sensor capabilities. This leads us to the concept of \term{state estimation}, which involves using available measurements to infer the true state of the system.
+
+A \term{dynamic system} is one whose state evolves over time according to a set of deterministic or stochastic rules. These systems can be modeled using mathematical equations that relate the state at one time to the state at a previous time, often with the influence of external inputs or disturbances. In real-world scenarios, measurements of the system's state are often corrupted by noise, making it challenging to determine the true state accurately. This uncertainty in measurements is a key challenge in state estimation.
+
+The \term{Kalman filter} is a powerful algorithm that provides an optimal solution to the problem of state estimation in linear dynamic systems with Gaussian noise. It combines a prediction of the system's state based on its dynamics with an update based on new measurements to produce an estimate that is more accurate than either prediction or measurement alone. The Kalman filter is widely used in various fields, including robotics, navigation, and signal processing, due to its efficiency and robustness.
+
+To better understand the role of the Kalman filter, consider a simple example: estimating the position of a car. The car's position changes over time based on its velocity, which is influenced by external factors such as road conditions or wind. If we measure the car's position using a GPS sensor, the measurement is likely to be noisy. The Kalman filter uses the car's dynamics (e.g., its velocity) to predict its next position and then updates this prediction based on the noisy GPS measurement, resulting in a more accurate estimate of the car's position.
+
+\lnfigure{}{s1/state-estimation-diagram-d040032f.pdf}{Schematic of state estimation in a dynamic system.}{fig:state-estimation-diagram}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+In summary, the Kalman filter is a critical tool for state estimation in dynamic systems. It enables us to estimate the true state of a system by combining predictions from the system's dynamics with measurements from sensors, even in the presence of noise. This makes it an indispensable algorithm in many real-world applications.
+
+% ---- s2.tex
+\section{Linear Dynamic Systems}
+
+In many engineering and scientific applications, we encounter systems that evolve over time in a predictable manner. To model such systems, we often use \term{linear dynamic systems}, which are mathematical models that describe how the state of a system changes over time. These models are particularly useful because they can be represented using simple linear equations, making them amenable to analysis and control design.
+
+A linear dynamic system can be described using a \term{state-space representation}, which is a set of first-order differential equations that describe the system's behavior. This representation is particularly powerful because it allows us to model both the internal state of the system and its external inputs and outputs in a unified way.
+
+The state-space representation consists of three main components: the \term{state vector}, the \term{input vector}, and the \term{output vector}. The state vector, denoted as $\vect{x}(t)$, contains all the information needed to fully describe the system at any given time $t$. It typically includes variables such as position, velocity, or other relevant physical quantities that define the system's behavior.
+
+The input vector, denoted as $\vect{u}(t)$, represents the external forces or signals that influence the system. These could be control inputs, disturbances, or any other external factors that affect the system's dynamics.
+
+The output vector, denoted as $\vect{y}(t)$, represents the observable quantities of the system. These are the variables that we can measure or observe directly, such as position, temperature, or voltage.
+
+To illustrate the concept of a state vector, consider a simple mechanical system with position and velocity as its state variables. The state vector would be $\vect{x}(t) = \begin{bmatrix} x(t) \\ \dot{x}(t) \end{bmatrix}$, where $x(t)$ is the position and $\dot{x}(t)$ is the velocity. This vector captures the complete state of the system at any given time.
+
+\lnfigure{}{s2/state-vector-illustration-b5e18734.pdf}{Example of a state vector over time for a simple mechanical system.}{fig:state-vector-illustration}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+The state-space representation is often visualized using a diagram that shows the relationships between the state, input, and output vectors. This diagram can help clarify how the system evolves over time and how different components interact with each other.
+
+\lnfigure{}{s2/state-space-diagram-696f497e.pdf}{State-space diagram for a linear system.}{fig:state-space-diagram}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+[keyidea] The state-space representation provides a unified framework for modeling linear dynamic systems by expressing their behavior through a set of first-order differential equations. This approach allows us to analyze and design controllers for complex systems in a systematic and structured manner.
+
+In summary, the state-space representation provides a powerful framework for modeling and analyzing linear dynamic systems. It allows us to describe the system's behavior using a set of first-order differential equations that relate the state, input, and output vectors. This representation is foundational for understanding and implementing more advanced techniques, such as the Kalman filter, which we will explore in the next section.
+
+% ---- s3.tex
+\section{Kalman Filter Equations}
+
+The Kalman filter is a recursive algorithm that estimates the state of a dynamic system from a series of noisy measurements. It operates in two main steps: the \term{prediction step} and the \term{update step}. These steps are based on the principles of linear algebra and probability theory, and they allow the filter to optimally combine the predicted state with the actual measurement to produce an estimate with minimal error.
+
+The \term{prediction step} is the first stage of the Kalman filter. In this step, the filter uses the previous state estimate and the system dynamics to predict the current state. This is done using the state transition model, which is typically represented as a linear equation. If the state vector is $\vect{x}_{k}$, the input vector is $\vect{u}_{k}$, and the state transition matrix is $\vect{F}_{k}$, then the predicted state is given by:
+\[
+\vect{\hat{x}}_{k|k-1} = \vect{F}_{k} \vect{\hat{x}}_{k-1|k-1} + \vect{G}_{k} \vect{u}_{k}
+\]
+Here, $\vect{G}_{k}$ is the control gain matrix, which maps the input vector to the state vector. This equation essentially projects the state forward in time based on the system's dynamics and any known inputs.
+
+The \term{update step} follows the prediction step and incorporates the actual measurement to refine the state estimate. This step involves computing the \term{Kalman gain}, which determines the weight given to the measurement versus the prediction. The Kalman gain is calculated using the covariance matrix of the state estimate and the measurement noise covariance matrix. The formula for the Kalman gain is:
+\[
+\vect{K}_{k} = \vect{P}_{k|k-1} \vect{H}_{k}^T (\vect{H}_{k} \vect{P}_{k|k-1} \vect{H}_{k}^T + \vect{R}_{k})^{-1}
+\]
+Here, $\vect{H}_{k}$ is the measurement matrix, which maps the state vector to the measurement space, and $\vect{R}_{k}$ is the measurement noise covariance matrix. The Kalman gain balances the uncertainty in the prediction and the measurement, ensuring that the filter gives more weight to the more reliable source of information.
+
+The \term{covariance matrix} plays a crucial role in the Kalman filter. It quantifies the uncertainty in the state estimate and is updated in both the prediction and update steps. Initially, the covariance matrix is set to a value that reflects the initial uncertainty in the state estimate. During the prediction step, the covariance matrix is propagated forward using the state transition matrix:
+\[
+\vect{P}_{k|k-1} = \vect{F}_{k} \vect{P}_{k-1|k-1} \vect{F}_{k}^T + \vect{Q}_{k}
+\]
+Here, $\vect{Q}_{k}$ is the process noise covariance matrix, which accounts for the uncertainty in the system dynamics. In the update step, the covariance matrix is reduced to reflect the information gained from the measurement:
+\[
+\vect{P}_{k|k} = (\vect{I} - \vect{K}_{k} \vect{H}_{k}) \vect{P}_{k|k-1}
+\]
+This equation shows how the uncertainty in the state estimate decreases as the filter incorporates new measurements.
+
+The Kalman filter is a powerful tool for state estimation in dynamic systems, and its equations are widely used in various applications, from robotics to navigation and signal processing. Understanding the prediction and update steps, along with the role of the covariance matrix and the Kalman gain, is essential for effectively applying the Kalman filter in practice.
+
+\lnfigure{}{s3/kalman-filter-flowchart-439629a1.pdf}{Flowchart of the Kalman filter showing the prediction and update steps.}{fig:kalman-filter-flowchart}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+\lnfigure{}{s3/kalman-gain-illustration-72e50d9a.pdf}{Example of Kalman gain over time.}{fig:kalman-gain-illustration}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+% ---- s4.tex
+\section{Example: Kalman Filter for a Simple System}
+
+In this section, we apply the Kalman filter to a simple dynamic system to illustrate how the filter estimates the state of a system based on noisy measurements. This example will help us understand the practical implementation of the Kalman filter and interpret the results.
+
+Consider a simple dynamic system where the state is the position of an object, and the measurements are noisy position readings. The system is governed by a linear state equation and a measurement model. We will derive the Kalman filter equations for this system and simulate the results to observe how well the filter estimates the true state.
+
+Let us define the state vector $\vect{x}_k$ as the position of the object at time $k$. The state model is given by:
+\[
+\vect{x}_k = A \vect{x}_{k-1} + B \vect{u}_k + \vect{w}_k
+\]
+where $A$ is the state transition matrix, $B$ is the input matrix, $\vect{u}_k$ is the input vector, and $\vect{w}_k$ is the process noise, assumed to be zero-mean Gaussian with covariance $Q_k$. In this example, we assume no external input, so $\vect{u}_k = 0$, and the state transition matrix $A$ is simply $1$ (since the position updates linearly with time).
+
+The measurement model is given by:
+\[
+\vect{z}_k = H \vect{x}_k + \vect{v}_k
+\]
+where $H$ is the measurement matrix, and $\vect{v}_k$ is the measurement noise, assumed to be zero-mean Gaussian with covariance $R_k$. In this case, $H = 1$ because the measurement is directly the position of the object.
+
+To apply the Kalman filter, we need to initialize the state estimate $\hat{\vect{x}}_0$ and the covariance matrix $P_0$. These values can be chosen based on prior knowledge of the system or estimated from the initial conditions.
+
+The Kalman filter operates in two steps: the prediction step and the update step. In the prediction step, we predict the state and its covariance:
+\[
+\hat{\vect{x}}_{k|k-1} = A \hat{\vect{x}}_{k-1}
+\]
+\[
+P_{k|k-1} = A P_{k-1} A^T + Q_k
+\]
+In the update step, we update the state estimate based on the measurement:
+\[
+K_k = P_{k|k-1} H^T (H P_{k|k-1} H^T + R_k)^{-1}
+\]
+\[
+\hat{\vect{x}}_k = \hat{\vect{x}}_{k|k-1} + K_k (\vect{z}_k - H \hat{\vect{x}}_{k|k-1})
+\]
+\[
+P_k = (I - K_k H) P_{k|k-1}
+\]
+These equations allow us to recursively estimate the state of the system, even in the presence of noise.
+
+To illustrate the performance of the Kalman filter, we simulate the system with known true state values and noisy measurements. The simulation results are shown in Figure~\ref{fig:example-filter-results}, which plots the true state, the measurements, and the Kalman filter estimates over time.
+
+\lnfigure{}{s4/example-filter-results-3fafcbcb.pdf}{Comparison of true state, measurements, and Kalman filter estimates.}{fig:example-filter-results}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+Figure~\ref{fig:example-system-diagram} provides a diagram of the example system, showing the relationship between the state, measurements, and the Kalman filter.
+
+\lnfigure{}{s4/example-system-diagram-24e33de6.pdf}{Diagram of the example system.}{fig:example-system-diagram}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+
+In summary, the Kalman filter is a powerful tool for estimating the state of a dynamic system based on noisy measurements. By applying the filter to a simple example, we have seen how the filter combines predictions and measurements to produce accurate estimates. The results of the simulation demonstrate the effectiveness of the Kalman filter in reducing the impact of noise on the state estimate.
+
+% ---- s5.tex
+\section{Summary and Applications}
+
+In this lecture, we have explored the \term{Kalman filter}, a powerful algorithm for estimating the state of a dynamic system in the presence of uncertainty. The Kalman filter operates by combining a prediction of the system's state with measurements to produce an optimal estimate. This approach is particularly effective for linear dynamic systems with Gaussian noise, and it forms the foundation for many modern applications in engineering and computer science.
+
+The Kalman filter consists of two main steps: the prediction step and the update step. In the prediction step, the filter uses the system's dynamics to predict the next state. This prediction is accompanied by a prediction of the uncertainty in the state estimate. In the update step, the filter incorporates a new measurement to refine its estimate of the state. The amount of weight given to the measurement is determined by the \term{Kalman gain}, which balances the uncertainty in the prediction and the measurement.
+
+The Kalman filter is characterized by its use of the \term{state-space representation}, which describes the system using a set of equations involving the state vector, input vector, and output vector. The \term{covariance matrix} quantifies the uncertainty in the state estimate, and the \term{Kalman gain} is derived from this matrix to optimize the fusion of prediction and measurement.
+
+The Kalman filter has a wide range of applications, from robotics to navigation and signal processing. In robotics, the Kalman filter is used to estimate the position and orientation of a robot based on sensor measurements, such as from inertial measurement units (IMUs) or GPS. In navigation systems, it is used to fuse data from multiple sensors to provide accurate and reliable positioning information. In signal processing, the Kalman filter is used to filter noisy signals and extract useful information, such as in the tracking of moving objects or in the processing of sensor data.
+
+To illustrate the applications of the Kalman filter, consider a simple dynamic system, such as a car moving along a straight road. The car's position and velocity are estimated using measurements from a GPS sensor and an accelerometer. The Kalman filter combines these measurements to provide an accurate estimate of the car's state, even in the presence of noise.
+
+\lnfigure{}{s5/kalman-applications-diagram-7431a412.pdf}{Applications of the Kalman filter in various domains.}{fig:kalman-applications-diagram}
+%
+%
+%
+%
+%
+%
+%
+%
+
+In summary, the Kalman filter is a powerful tool for state estimation in dynamic systems. Its ability to combine predictions and measurements makes it particularly useful in applications where uncertainty is a key factor. The filter is widely used in fields such as robotics, navigation, and signal processing, and its principles form the foundation for many advanced estimation techniques.
+
+\begin{summary}
+  \begin{itemize}
+    \item The Kalman filter is a recursive algorithm for estimating the state of a dynamic system.
+    \item It combines a prediction step and an update step to produce an optimal estimate.
+    \item The Kalman filter uses the state-space representation and the covariance matrix to quantify uncertainty.
+    \item The Kalman gain determines the weight given to the measurement in the update step.
+    \item The Kalman filter has a wide range of applications, including robotics, navigation, and signal processing.
+  \end{itemize}
+\end{summary}
+
+\end{document}

@@ -1,0 +1,69 @@
+<# Jinja2 template for the lecture notes document; see latex/assembler.py for the delimiters #>
+\documentclass[11pt,a4paper]{article}
+<% if language == 'ru' %>
+\usepackage[T2A,T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[russian,english]{babel}
+<% else %>
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+<% endif %>
+\IfFileExists{lmodern.sty}{\usepackage{lmodern}}{}
+\usepackage[a4paper,margin=2.3cm,headheight=14pt]{geometry}
+\setlength{\parskip}{3pt plus 1pt}
+\usepackage{lecturenotes}
+<% if language == 'ru' %>
+\AtBeginDocument{\selectlanguage{russian}}
+\renewcommand{\lnlabeldefinition}{Определение}
+\renewcommand{\lnlabeltheorem}{Теорема}
+\renewcommand{\lnlabellemma}{Лемма}
+\renewcommand{\lnlabelproposition}{Утверждение}
+\renewcommand{\lnlabelcorollary}{Следствие}
+\renewcommand{\lnlabelexample}{Пример}
+\renewcommand{\lnlabelremark}{Замечание}
+\renewcommand{\lnlabelkeyidea}{Ключевая идея}
+\renewcommand{\lnlabelwarning}{Осторожно}
+\renewcommand{\lnlabelsummary}{Итоги}
+\renewcommand{\lnlabelexercise}{Упражнение}
+\renewcommand{\lnlabelsolution}{Решение}
+\renewcommand{\lnlabeloverview}{Обзор}
+\renewcommand{\lnlabelobjectives}{Цели лекции}
+\renewcommand{\lnlabelprereq}{Необходимые знания}
+<% endif %>
+\IfFileExists{fancyhdr.sty}{%
+  \usepackage{fancyhdr}\pagestyle{fancy}\fancyhf{}%
+  \fancyhead[L]{\small\sffamily\color{lngray}<< short_title >>}%
+  \fancyhead[R]{\small\sffamily\color{lngray}\nouppercase{\leftmark}}%
+  \fancyfoot[C]{\small\sffamily\color{lngray}\thepage}%
+  \renewcommand{\headrulewidth}{0.3pt}}{}
+\graphicspath{{figures/}}
+
+\begin{document}
+\lnmaketitle{<< title >>}{<< subtitle >>}{<< meta >>}
+
+<% if abstract or objectives or prerequisites %>
+\begin{lnoverview}
+<< abstract >>
+<% if objectives %>
+
+\smallskip\noindent\textbf{\lnlabelobjectives:}
+\begin{itemize}
+<% for o in objectives %>  \item << o >>
+<% endfor %>\end{itemize}
+<% endif %>
+<% if prerequisites %>
+\noindent\textbf{\lnlabelprereq:} << prerequisites | join(', ') >>.
+<% endif %>
+\end{lnoverview}
+<% endif %>
+
+<% if toc %>
+{\small\tableofcontents}
+\bigskip
+<% endif %>
+
+<% for s in sections %>
+\input{sections/<< s >>}
+<% endfor %>
+
+\end{document}
