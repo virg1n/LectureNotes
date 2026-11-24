@@ -55,6 +55,10 @@
       <label>Slides<input name="pages" placeholder="all, or 1-12,15"></label>
       <label>Cheat sheet pages<select name="cheatsheet_pages"><option value="">auto</option><option>1</option><option>2</option><option>3</option></select></label>
       <label>Language<select name="lang"><option value="">English</option><option value="ru">Russian</option></select></label>
+      <label class="half" id="gpuopt" hidden>GPU<select name="gpu">
+        <option value="auto">v100, or my GPU if v100 is busy / unreachable</option>
+        <option value="v100">v100 only (wait for it)</option>
+        <option value="local">my GPU (this PC)</option></select></label>
       <div class="wide row">
         <button id="go" type="submit">Generate</button>
         <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" name="no_cheatsheet"> no cheat sheet</label>
@@ -70,7 +74,10 @@
 const $ = s => document.querySelector(s);
 const file = $('#file'), drop = $('#drop');
 const LABEL = {new:'queued', uploading:'uploading', queued:'waiting', waiting_gpu:'waiting for a free GPU', loading:'starting model',
-               generating:'writing notes', fetching:'downloading', done:'done', error:'error', cancelled:'cancelled'};
+               generating:'writing notes', fetching:'downloading', done:'done', error:'error', cancelled:'cancelled',
+               local_loading:'starting model on my GPU', local_generating:'writing notes on my GPU'};
+let LOCAL = false;
+fetch('/api/config').then(r => r.json()).then(c => { LOCAL = c.local_gpu; $('#gpuopt').hidden = !LOCAL; last = ''; refresh(); }).catch(() => {});
 const FINAL = new Set(['done','error','cancelled']);
 const logs = new Set(); let last = '';
 
@@ -119,7 +126,7 @@ async function refresh() {
   let jobs;
   try { jobs = await (await fetch('/api/jobs')).json(); } catch { return; }
   if (!jobs.length) return;
-  const sig = JSON.stringify(jobs.map(j => [j.id, j.state, j.message, j.gpu])) + Math.floor(Date.now() / 30000);
+  const sig = JSON.stringify(jobs.map(j => [j.id, j.state, j.message, j.gpu, j.offline, j.use_local])) + Math.floor(Date.now() / 30000);
   if (sig === last) return; last = sig;
   $('#jobs').innerHTML = jobs.map(j => {
     const run = !FINAL.has(j.state);
@@ -136,14 +143,17 @@ async function refresh() {
         <a href="/files/${j.id}/bundle.zip">all (.zip)</a></div>`;
     return `<div class="job">
       <div class="row"><h3>${esc(j.topic || j.slides_name)}</h3>
-        <span class="pill ${cls}">${LABEL[j.state] || j.state}${j.gpu != null && run ? ' · GPU ' + j.gpu : ''}</span>
+        <span class="pill ${cls}">${j.offline && run ? 'server unreachable' : (LABEL[j.state] || j.state)}${j.gpu != null && run ? ' · GPU ' + j.gpu : ''}</span>
         <span class="meta">${dur}</span></div>
       <div class="meta">${esc(j.slides_name)}${opts ? ' · ' + esc(opts) : ''}${j.message ? ' — ' + esc(j.message) : ''}</div>
       ${links}
       <div class="row" style="margin-top:6px">
         <button class="ghost" onclick="toggleLog('${j.id}')">log</button>
+        ${run && LOCAL && !String(j.state).startsWith('local') && !j.use_local && j.state !== 'fetching'
+              ? `<button class="ghost" onclick="act('${j.id}','local')">use my GPU</button>` : ''}
         ${run ? `<button class="ghost" onclick="act('${j.id}','cancel')">cancel</button>`
-              : `<button class="ghost" onclick="if(confirm('Delete this job?'))act('${j.id}','delete')">delete</button>`}
+              : `${j.state !== 'done' ? `<button class="ghost" onclick="act('${j.id}','retry')">retry</button>` : ''}
+                 <button class="ghost" onclick="if(confirm('Delete this job?'))act('${j.id}','delete')">delete</button>`}
       </div>
       <pre id="log-${j.id}" hidden></pre></div>`;
   }).join('');

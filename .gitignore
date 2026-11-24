@@ -15,3 +15,5 @@ logs/
 webapp/jobs/
 .pytest_cache/
 .claude/
+webapp/.env
+webapp/jobs/
